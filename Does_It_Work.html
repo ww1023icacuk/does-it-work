@@ -298,7 +298,8 @@ const TRACKABLE_FILTERS = [
 const LS_REPORTS  = 'ic-access-reports-v2';
 const LS_OVERRIDE = 'ic-access-overrides-v2';
 const LS_IMPORTED = 'ic-access-imported-v2';
-const LS_LOGO    = 'ic-access-logo-v1';
+const LS_LOGO     = 'ic-access-logo-v1';
+const LS_FB_CFG   = 'ic-access-firebase-cfg';
 
 function getLogo() {
   const src = localStorage.getItem(LS_LOGO);
@@ -589,6 +590,68 @@ const SEED = [
 ];
 
 // ─────────────────────────────────────────────
+// FIREBASE
+// ─────────────────────────────────────────────
+let db = null;
+let fbReady = false;           // true once first snapshot received
+let cachedReports   = {};      // { featureId: [{status,note,timestamp,source}] }
+let cachedOverrides = {};      // { featureId: {status,note,timestamp} }
+
+function initFirebase() {
+  let cfg = null;
+  try { cfg = JSON.parse(localStorage.getItem(LS_FB_CFG) || 'null'); } catch {}
+  if (!cfg || !cfg.projectId) return; // not configured yet
+
+  try {
+    const app = firebase.initializeApp(cfg);
+    db = firebase.firestore();
+
+    // Real-time listener: reports
+    db.collection('reports').onSnapshot(snap => {
+      snap.forEach(d => { cachedReports[d.id] = d.data().items || []; });
+      // Remove any docs deleted remotely
+      const ids = new Set(snap.docs.map(d => d.id));
+      for (const k of Object.keys(cachedReports)) {
+        if (!ids.has(k)) delete cachedReports[k];
+      }
+      fbReady = true;
+      renderApp();
+    }, err => console.error('FB reports error', err));
+
+    // Real-time listener: overrides
+    db.collection('overrides').onSnapshot(snap => {
+      cachedOverrides = {};
+      snap.forEach(d => { cachedOverrides[d.id] = d.data(); });
+      renderApp();
+    }, err => console.error('FB overrides error', err));
+
+  } catch(e) {
+    console.error('Firebase init failed:', e);
+    db = null;
+  }
+}
+
+function saveFirebaseConfig() {
+  const raw = document.getElementById('fb-cfg-input')?.value?.trim();
+  if (!raw) return;
+  try {
+    // Accept both the raw JS object Firebase gives you and plain JSON
+    const json = raw
+      .replace(/\/\/.*/g, '')           // strip // comments
+      .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":') // quote bare keys
+      .replace(/'/g, '"');              // single → double quotes
+    const cfg = JSON.parse(json);
+    if (!cfg.projectId) throw new Error('Missing projectId');
+    localStorage.setItem(LS_FB_CFG, JSON.stringify(cfg));
+    // Re-init (reload to get fresh Firebase instance)
+    showToast('✅ Firebase config saved — reloading…');
+    setTimeout(() => location.reload(), 1200);
+  } catch(e) {
+    showToast('❌ Invalid config: ' + e.message);
+  }
+}
+
+// ─────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────
 let currentView = 'buildings'; // 'buildings' | 'types'
@@ -597,8 +660,14 @@ let modalState = null;
 let importPreview = null;
 let qrLanding = { selectedAnswer: null, submitted: false }; // 'yes' | 'no' | null
 
-function loadReports()  { try { return JSON.parse(localStorage.getItem(LS_REPORTS)  || '{}'); } catch { return {}; } }
-function loadOverrides(){ try { return JSON.parse(localStorage.getItem(LS_OVERRIDE) || '{}'); } catch { return {}; } }
+function loadReports()  {
+  if (db) return cachedReports;
+  try { return JSON.parse(localStorage.getItem(LS_REPORTS)  || '{}'); } catch { return {}; }
+}
+function loadOverrides(){
+  if (db) return cachedOverrides;
+  try { return JSON.parse(localStorage.getItem(LS_OVERRIDE) || '{}'); } catch { return {}; }
+}
 function loadImported() { try { return JSON.parse(localStorage.getItem(LS_IMPORTED) || '[]'); } catch { return []; } }
 
 function saveReports(r)  { localStorage.setItem(LS_REPORTS,  JSON.stringify(r)); }
@@ -673,19 +742,37 @@ function computeStatus(featureId, defaultStatus) {
 }
 
 function addReport(featureId, status, note, source = 'web') {
-  const all = loadReports();
-  if (!all[featureId]) all[featureId] = [];
-  all[featureId].push({ status, note, timestamp: new Date().toISOString(), source });
-  // Keep last 50 reports per feature
-  if (all[featureId].length > 50) all[featureId] = all[featureId].slice(-50);
-  saveReports(all);
+  const entry = { status, note: note || '', timestamp: new Date().toISOString(), source };
+  if (db) {
+    const ref = db.collection('reports').doc(featureId);
+    ref.get().then(snap => {
+      const items = snap.exists ? (snap.data().items || []) : [];
+      items.push(entry);
+      if (items.length > 50) items.splice(0, items.length - 50);
+      ref.set({ items });
+      // onSnapshot will update cachedReports and re-render automatically
+    }).catch(e => console.error('addReport error', e));
+  } else {
+    const all = loadReports();
+    if (!all[featureId]) all[featureId] = [];
+    all[featureId].push(entry);
+    if (all[featureId].length > 50) all[featureId] = all[featureId].slice(-50);
+    saveReports(all);
+  }
 }
 
 function setOverride(featureId, status, note) {
-  const all = loadOverrides();
-  if (status === null) { delete all[featureId]; }
-  else { all[featureId] = { status, note, timestamp: new Date().toISOString() }; }
-  saveOverrides(all);
+  if (db) {
+    const ref = db.collection('overrides').doc(featureId);
+    if (status === null) { ref.delete(); }
+    else { ref.set({ status, note: note || '', timestamp: new Date().toISOString() }); }
+    // onSnapshot will update cachedOverrides and re-render
+  } else {
+    const all = loadOverrides();
+    if (status === null) { delete all[featureId]; }
+    else { all[featureId] = { status, note: note || '', timestamp: new Date().toISOString() }; }
+    saveOverrides(all);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -951,6 +1038,10 @@ function renderMain() {
       ${summary.partial ? `<span class="summary-pill pill-partial">⚠️ ${summary.partial} partial</span>` : ''}
       ${summary.broken  ? `<span class="summary-pill pill-broken">🔴 ${summary.broken} broken</span>`  : ''}
       ${summary.unavail ? `<span class="summary-pill pill-unavail">⬜ ${summary.unavail} unavailable</span>` : ''}
+      ${db
+        ? `<span class="summary-pill" style="background:rgba(48,209,88,.12);color:#30d158" title="Live sync active">🔴 Live</span>`
+        : `<span class="summary-pill" style="background:var(--unavail-bg);color:var(--unavail)" title="Offline — reports stored locally">📴 Local</span>`
+      }
     </div>
     <main class="main" role="main">${content}</main>
     <button class="fab" onclick="route('#/admin')" aria-label="Admin: import CSV data" title="Import CSV data">⚙️</button>
@@ -1096,6 +1187,41 @@ function renderAdminPage() {
       </div>
     </header>
     <div class="admin-page">
+      <!-- ── Firebase setup ── -->
+      <div style="margin-bottom:28px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:16px;font-weight:700">Firebase (Live Sync)</span>
+          ${db
+            ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(48,209,88,.15);color:#30d158">● Connected</span>`
+            : `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--unavail-bg);color:var(--unavail)">○ Not connected</span>`
+          }
+        </div>
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:12px;line-height:1.5">
+          Connect Firebase Firestore so reports from all users are shared in real time.<br>
+          ${db ? 'To update your config, paste a new one below.' : '<a href="https://console.firebase.google.com" target="_blank" rel="noopener">Create a free Firebase project →</a>'}
+        </p>
+        <textarea id="fb-cfg-input" class="note-input" rows="6"
+          placeholder='Paste your Firebase config object here, e.g.:
+{
+  apiKey: "AIza...",
+  authDomain: "your-app.firebaseapp.com",
+  projectId: "your-app",
+  storageBucket: "your-app.appspot.com",
+  messagingSenderId: "123456",
+  appId: "1:123456:web:abc"
+}'
+          style="font-family:monospace;font-size:12px"></textarea>
+        <button class="btn-import" onclick="saveFirebaseConfig()" style="margin-top:8px">Save &amp; Connect</button>
+        ${db ? `<button class="btn-clear" onclick="localStorage.removeItem('${LS_FB_CFG}');location.reload()" style="margin-left:8px">Disconnect</button>` : ''}
+        <div style="margin-top:10px;font-size:12px;color:var(--text-3);line-height:1.6">
+          <strong style="color:var(--text-2)">Quick setup:</strong><br>
+          1. Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → New project<br>
+          2. Add a Web app → copy the <code>firebaseConfig</code> object<br>
+          3. Build → Firestore Database → Create → <strong>Start in test mode</strong><br>
+          4. Paste config above and click Save
+        </div>
+      </div>
+      <div style="height:1px;background:var(--border);margin-bottom:24px"></div>
       <!-- ── Logo upload ── -->
       <div style="margin-bottom:28px">
         <div style="font-size:16px;font-weight:700;margin-bottom:12px">App Logo</div>
@@ -1699,8 +1825,11 @@ window.addEventListener('hashchange', () => {
   renderApp();
 });
 
+initFirebase();
 renderApp();
 </script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
   integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSr7FurulmL7pH0LapudyW/URZrmBcTFbQ=="
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
