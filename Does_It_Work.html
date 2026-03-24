@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f0f">
+<title>IC Accessibility Status</title>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #1c1c1e;
+  --card: #242428;
+  --border: #2e2e32;
+  --text: #f2f2f7;
+  --text-2: #aeaeb2;
+  --text-3: #636366;
+  --working: #30d158;
+  --working-bg: rgba(48,209,88,.12);
+  --partial: #ffd60a;
+  --partial-bg: rgba(255,214,10,.12);
+  --broken: #ff453a;
+  --broken-bg: rgba(255,69,58,.12);
+  --unavail: #636366;
+  --unavail-bg: rgba(99,99,102,.12);
+  --accent: #0a84ff;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
+
+/* ── Header ── */
+.header{position:sticky;top:0;z-index:100;background:rgba(15,15,15,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:12px 16px 0}
+.header-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.header-logo{width:28px;height:28px;background:linear-gradient(135deg,#003B8E,#006EAF);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.header-title{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.header-badge{font-size:11px;padding:2px 8px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text-2);margin-left:auto;white-space:nowrap}
+
+/* ── Nav tabs ── */
+.nav-tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
+.nav-tab{flex:1;padding:10px 8px;font-size:13px;font-weight:600;text-align:center;color:var(--text-2);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
+.nav-tab[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── Filter bar ── */
+.filter-bar{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-btn{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:.15s}
+.filter-btn.active,.filter-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── Summary bar ── */
+.summary-bar{display:flex;gap:8px;padding:0 16px 10px;flex-wrap:wrap}
+.summary-pill{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:.2px}
+.pill-working{background:var(--working-bg);color:var(--working)}
+.pill-partial{background:var(--partial-bg);color:var(--partial)}
+.pill-broken{background:var(--broken-bg);color:var(--broken)}
+.pill-unavail{background:var(--unavail-bg);color:var(--unavail)}
+
+/* ── Main content ── */
+.main{padding:8px 16px}
+
+/* ── Building card ── */
+.building-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden}
+.building-header{display:flex;align-items:center;gap:8px;padding:14px 16px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.building-header:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.building-name{font-size:15px;font-weight:600;flex:1}
+.building-chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.chip-broken{background:var(--broken-bg);color:var(--broken)}
+.chip-partial{background:var(--partial-bg);color:var(--partial)}
+.chevron{transition:transform .25s;color:var(--text-3);font-size:12px;flex-shrink:0}
+.building-card.open .chevron{transform:rotate(180deg)}
+.building-body{display:none;padding:0 12px 12px}
+.building-card.open .building-body{display:block}
+
+/* ── Feature row ── */
+.feature-row{display:flex;align-items:flex-start;gap:10px;padding:10px 10px;border-radius:var(--radius-sm);margin-bottom:4px;background:var(--card);border:1px solid var(--border);cursor:pointer;text-decoration:none;color:inherit;transition:border-color .15s,background .15s}
+.feature-row:hover{border-color:var(--accent);background:#1e1e24}
+.feature-row:active{background:#18181e}
+.feature-row:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.feature-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center;line-height:1}
+.feature-body{flex:1;min-width:0}
+.feature-name{font-size:14px;font-weight:600;margin-bottom:2px;line-height:1.3}
+.feature-detail{font-size:12px;color:var(--text-2);line-height:1.4;margin-bottom:4px}
+.feature-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.status-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.2px}
+.status-working{background:var(--working-bg);color:var(--working)}
+.status-partial{background:var(--partial-bg);color:var(--partial)}
+.status-broken{background:var(--broken-bg);color:var(--broken)}
+.status-unavailable{background:var(--unavail-bg);color:var(--unavail)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.confidence-tag{font-size:10px;color:var(--text-3);padding:2px 6px;border-radius:10px;border:1px solid var(--border)}
+.updated-tag{font-size:10px;color:var(--text-3)}
+.report-count{font-size:10px;color:var(--text-3)}
+.edit-btn{flex-shrink:0;padding:6px 12px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.edit-btn:hover{border-color:var(--accent);color:var(--accent)}
+.edit-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.feature-chevron{flex-shrink:0;color:var(--text-3);font-size:18px;align-self:center;margin-left:2px;line-height:1}
+
+/* ── Feature type list (By Type view) ── */
+.type-section{margin-bottom:24px}
+.type-section-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 2px}
+.type-section-icon{font-size:18px}
+.type-section-title{font-size:16px;font-weight:700}
+.type-section-count{font-size:13px;color:var(--text-3);margin-left:auto}
+
+/* ── Bottom sheet modal ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end}
+.overlay.open{display:flex;animation:fadeIn .2s}
+.sheet{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease-out}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px}
+.sheet-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.sheet-subtitle{font-size:14px;color:var(--text-2);margin-bottom:20px;line-height:1.4}
+.status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.status-option{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:var(--radius);border:2px solid var(--border);background:var(--card);cursor:pointer;transition:.15s;font-size:12px;font-weight:600;text-align:center}
+.status-option:hover{border-color:var(--accent)}
+.status-option.selected-working{border-color:var(--working);background:var(--working-bg);color:var(--working)}
+.status-option.selected-partial{border-color:var(--partial);background:var(--partial-bg);color:var(--partial)}
+.status-option.selected-broken{border-color:var(--broken);background:var(--broken-bg);color:var(--broken)}
+.status-option-icon{font-size:24px}
+.note-input{width:100%;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;resize:none;margin-bottom:16px;font-family:inherit}
+.note-input:focus{outline:none;border-color:var(--accent)}
+.note-input::placeholder{color:var(--text-3)}
+.btn-primary{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:700;cursor:pointer;transition:.15s;margin-bottom:8px}
+.btn-primary:hover{opacity:.9}
+.btn-primary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn-secondary{width:100%;padding:12px;background:var(--card);color:var(--text-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-secondary:hover{background:var(--surface)}
+
+/* ── QR feature page ── */
+.qr-page{padding:16px;max-width:480px;margin:0 auto}
+.qr-back{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-size:14px;font-weight:600;text-decoration:none;margin-bottom:20px;cursor:pointer;background:none;border:none}
+.qr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.qr-feature-icon{font-size:40px;margin-bottom:12px}
+.qr-feature-name{font-size:22px;font-weight:800;margin-bottom:4px;letter-spacing:-.3px}
+.qr-building-name{font-size:15px;color:var(--text-2);margin-bottom:8px}
+.qr-detail{font-size:13px;color:var(--text-2);line-height:1.5;margin-bottom:16px}
+.qr-status-large{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:700;padding:10px 16px;border-radius:var(--radius-sm)}
+.qr-meta{margin-top:12px;font-size:12px;color:var(--text-3);display:flex;flex-direction:column;gap:3px}
+.qr-report-title{font-size:17px;font-weight:700;margin-bottom:14px}
+.qr-note-label{font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px;display:block}
+.qr-source{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);text-decoration:none;margin-top:8px}
+.staff-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(10,132,255,.15);color:var(--accent);margin-top:8px}
+
+/* ── Admin / CSV import page ── */
+.admin-page{padding:16px;max-width:640px;margin:0 auto}
+.admin-title{font-size:22px;font-weight:800;margin-bottom:4px}
+.admin-subtitle{font-size:14px;color:var(--text-2);margin-bottom:24px}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:48px 24px;text-align:center;cursor:pointer;transition:.2s;position:relative}
+.drop-zone.dragover{border-color:var(--accent);background:rgba(10,132,255,.05)}
+.drop-zone-icon{font-size:40px;margin-bottom:12px}
+.drop-zone-text{font-size:15px;font-weight:600;margin-bottom:4px}
+.drop-zone-sub{font-size:13px;color:var(--text-2)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.import-preview{margin-top:20px}
+.preview-table-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border);margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--card);padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:var(--text-2);letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.import-stats{font-size:13px;color:var(--text-2);margin-bottom:12px}
+.import-stats strong{color:var(--text)}
+.btn-import{padding:12px 24px;background:var(--working);color:#000;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;margin-right:8px}
+.btn-clear{padding:12px 24px;background:var(--card);color:var(--text-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer}
+.schema-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-top:20px;font-size:12px;font-family:monospace;line-height:1.8;color:var(--text-2)}
+.schema-box strong{color:var(--text)}
+.success-toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--working);color:#000;font-weight:700;font-size:14px;padding:10px 20px;border-radius:20px;z-index:300;animation:fadeIn .3s;pointer-events:none}
+
+/* ── Empty state ── */
+.empty-state{text-align:center;padding:48px 24px;color:var(--text-3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-text{font-size:15px;font-weight:600;margin-bottom:4px;color:var(--text-2)}
+.empty-sub{font-size:13px}
+
+/* ── FAB (admin) ── */
+.fab{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));right:20px;width:48px;height:48px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:var(--text-2);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:90;transition:.2s;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.fab:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes scaleIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ── Focus / accessible states ── */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── Feature subpage radio cards ── */
+.report-radio-group{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px}
+.report-radio-input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+.report-radio-label{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:var(--radius);border:2px solid var(--border);background:var(--card);cursor:pointer;font-size:12px;font-weight:600;text-align:center;color:var(--text-2);transition:.15s;min-height:72px;justify-content:center}
+.report-radio-label:hover{border-color:var(--accent)}
+.report-radio-input:checked + .report-lbl-working{border-color:var(--working);background:var(--working-bg);color:var(--working)}
+.report-radio-input:checked + .report-lbl-partial{border-color:var(--partial);background:var(--partial-bg);color:var(--partial)}
+.report-radio-input:checked + .report-lbl-broken{border-color:var(--broken);background:var(--broken-bg);color:var(--broken)}
+.report-radio-input:focus-visible + .report-radio-label{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ── QR Yes/No landing page ── */
+.qrs-page{min-height:100vh;display:flex;flex-direction:column;padding:0;background:var(--bg)}
+.qrs-header{padding:20px 20px 0;display:flex;align-items:center;gap:10px}
+.qrs-back{background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px}
+.qrs-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px 16px;text-align:center;max-width:480px;margin:0 auto;width:100%}
+.qrs-title{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px;line-height:1.1}
+.qrs-feature-info{display:flex;align-items:center;gap:8px;font-size:16px;color:var(--text-2);margin-bottom:32px}
+.qrs-icon{font-size:22px}
+.answer-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:360px;margin-bottom:24px}
+.answer-btn{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 16px;border-radius:16px;border:2px solid var(--border);background:var(--card);cursor:pointer;font-size:16px;font-weight:700;color:var(--text-2);transition:.18s;min-height:100px}
+.answer-btn:hover{transform:translateY(-2px)}
+.answer-btn .ab-icon{font-size:32px}
+.answer-btn.sel-yes{border-color:var(--working);background:var(--working-bg);color:var(--working);animation:scaleIn .2s}
+.answer-btn.sel-no{border-color:var(--broken);background:var(--broken-bg);color:var(--broken);animation:scaleIn .2s}
+.qrs-note-wrap{width:100%;max-width:360px;margin-bottom:20px;text-align:left}
+.qrs-note-label{display:block;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+.qrs-confirm{width:100%;max-width:360px;padding:16px;font-size:17px;font-weight:700;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:.15s;margin-bottom:8px}
+.qrs-confirm:not(:disabled){background:var(--accent);color:#fff}
+.qrs-confirm:disabled{background:var(--surface);border:1px solid var(--border);color:var(--text-3);cursor:not-allowed}
+.qrs-footer{border-top:1px solid var(--border);padding:18px 20px calc(18px + env(safe-area-inset-bottom));background:var(--surface);margin-top:auto}
+.qrs-footer-loc{font-size:13px;color:var(--text-2);margin-bottom:10px;line-height:1.6}
+.qrs-footer-loc strong{color:var(--text);display:block;font-size:14px}
+.qrs-choose{color:var(--accent);font-size:14px;font-weight:600;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+/* Submitted state */
+.qrs-submitted{text-align:center;padding:48px 24px}
+.qrs-submitted-icon{font-size:64px;margin-bottom:16px;display:block}
+.qrs-submitted-title{font-size:24px;font-weight:800;margin-bottom:8px}
+.qrs-submitted-sub{font-size:15px;color:var(--text-2);line-height:1.5;margin-bottom:32px}
+.qrs-btn-row{display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto}
+
+/* ── QR Code print page ── */
+.qrp-page{min-height:100vh;display:flex;flex-direction:column;background:var(--bg);padding:0}
+.qrp-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.qrp-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center}
+.qrp-card{background:#fff;border-radius:20px;padding:32px;display:inline-flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 8px 40px rgba(0,0,0,.5);max-width:340px;width:100%}
+#qr-canvas img,#qr-canvas canvas{border-radius:8px;display:block}
+.qrp-label{color:#000;font-size:14px;font-weight:700;text-align:center;line-height:1.4;max-width:240px}
+.qrp-sublabel{color:#666;font-size:12px;text-align:center}
+.qrp-icon-row{display:flex;align-items:center;gap:8px;font-size:22px}
+.qrp-actions{display:flex;gap:12px;margin-top:24px;justify-content:center;flex-wrap:wrap}
+.btn-print{padding:12px 24px;background:var(--working);color:#000;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer}
+.qrp-url{font-size:11px;color:var(--text-3);margin-top:16px;word-break:break-all;max-width:320px;text-align:center}
+@media print{
+  .qrs-back,.fab,.qrp-actions,.qrp-header{display:none!important}
+  .qrp-body{padding:0}
+  body{background:#fff}
+  .qrp-card{box-shadow:none;border:1px solid #ddd}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────
+const TYPES = {
+  lift:      { icon: '🛗',  label: 'Lift',             trackable: true },
+  ramp:      { icon: '🔼',  label: 'Ramp',             trackable: true },
+  toilet:    { icon: '🚻',  label: 'Accessible Toilet',trackable: true },
+  door:      { icon: '🚪',  label: 'Door',             trackable: true },
+  hearing:   { icon: '🦻',  label: 'Hearing Loop',     trackable: true },
+  shower:    { icon: '🚿',  label: 'Accessible Shower',trackable: true },
+  wheelchair:{ icon: '♿',  label: 'Wheelchair Space', trackable: true },
+  steps:     { icon: '🪜',  label: 'Steps / Barrier',  trackable: false },
+  intercom:  { icon: '📞',  label: 'Intercom',         trackable: false },
+  keycard:   { icon: '🔑',  label: 'Keycard',          trackable: false },
+  tactile:   { icon: '🟡',  label: 'Tactile Paving',   trackable: false },
+  parking:   { icon: '🅿️',  label: 'Blue Badge Parking',trackable: true },
+};
+
+const STATUS_CFG = {
+  working:    { label: 'Working',         icon: '✅', cls: 'working' },
+  partial:    { label: 'Partial',         icon: '⚠️', cls: 'partial' },
+  broken:     { label: 'Broken',          icon: '🔴', cls: 'broken'  },
+  unavailable:{ label: 'Not Available',   icon: '⬜', cls: 'unavailable' },
+  maintenance:{ label: 'Under Repair',    icon: '🔧', cls: 'partial'  },
+};
+
+const TRACKABLE_FILTERS = [
+  { id: 'all',       label: 'All' },
+  { id: 'broken',    label: '🔴 Broken' },
+  { id: 'partial',   label: '⚠️ Partial' },
+  { id: 'lift',      label: '🛗 Lifts' },
+  { id: 'toilet',    label: '🚻 Toilets' },
+  { id: 'ramp',      label: '🔼 Ramps' },
+  { id: 'door',      label: '🚪 Doors' },
+  { id: 'hearing',   label: '🦻 Hearing' },
+  { id: 'shower',    label: '🚿 Showers' },
+  { id: 'steps',     label: '🪜 Barriers' },
+];
+
+const LS_REPORTS  = 'ic-access-reports-v2';
+const LS_OVERRIDE = 'ic-access-overrides-v2';
+const LS_IMPORTED = 'ic-access-imported-v2';
+
+// ─────────────────────────────────────────────
+// SEED DATA  (parsed from AccessAble CSV)
+// ─────────────────────────────────────────────
+const SEED = [
+  {
+    id: 'sherfield', name: 'Sherfield Building',
+    features: [
+      { id:'SHF-LFT-01', type:'lift',    name:'Rear Lift',                      detail:'Standard lift, rear of building, floors 0–5+',            floor:'0–5+', notes:'Accessible to multiple floors', defaultStatus:'working' },
+      { id:'SHF-RMP-01', type:'ramp',    name:'Dalby Court Ramp',               detail:'Permanent ramp, Dalby Court entrance to walkway, ground floor', floor:'G', notes:'Gradient: short and steep', defaultStatus:'working' },
+      { id:'SHF-RMP-02', type:'ramp',    name:'Walkway Ramp',                   detail:'Permanent ramp, block-paved walkway area, level 3',        floor:'3',   notes:'Clear signage along slope', defaultStatus:'working' },
+      { id:'SHF-WC-01',  type:'toilet',  name:'Staff Area Toilet (Level 4)',    detail:'Rear of staff area, 4th floor. 350×210 cm; door 80 cm',   floor:'4',   notes:'Locking handle; horizontal grab rail; "Not All Disabilities Are Visible" signage', defaultStatus:'working' },
+      { id:'SHF-WC-02',  type:'toilet',  name:'Ground Floor Toilet',            detail:'Ground floor accessible toilet',                           floor:'0',   notes:'Located on ground floor', defaultStatus:'working' },
+      { id:'SHF-WC-03',  type:'toilet',  name:'H-Bar Toilet',                   detail:'Ground floor by H-Bar café area',                          floor:'0',   notes:'Near H-Bar café', defaultStatus:'working' },
+      { id:'SHF-WC-04',  type:'toilet',  name:'Main Ground Floor Toilet',       detail:'Ground floor near main lifts. 150×180 cm; door 96 cm',    floor:'0',   notes:'Ramped access; twist lock; no 150 cm turning space; 40 m from main lifts', defaultStatus:'working' },
+      { id:'SHF-HLP-01', type:'hearing', name:'Read Lecture Theatre Loop',      detail:'Fixed hearing loop, Read Lecture Theatre (S571), levels 4–5', floor:'4–5', notes:'6 medium steps to speaker area (no step-free access to front)', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'main-entrance', name: 'Main Entrance Building',
+    features: [
+      { id:'MEB-RMP-01', type:'ramp',  name:'Dalby Courtyard Ramp',             detail:'Permanent ramp, rear of building off Dalby Courtyard, ground floor', floor:'G',  notes:'Gradient: slight; to the right of entrance', defaultStatus:'working' },
+      { id:'MEB-DR-01',  type:'door',  name:'Rear Entrance Auto Door',          detail:'Automatic push-pad double doors, rear entrance off Dalby Courtyard', floor:'G',  notes:'Door opening 160 cm; automatic; push pad activated', defaultStatus:'working' },
+      { id:'MEB-DR-02',  type:'door',  name:'Exhibition Road Auto Door (Side)', detail:'Automatic push-pad door, side entrance via ramp off Exhibition Road', floor:'G',  notes:'Door opening 112 cm; push pad; keycard required at 108 cm; small lip <2 cm', defaultStatus:'working' },
+      { id:'MEB-RMP-02', type:'ramp',  name:'Exhibition Road Internal Ramp',    detail:'Internal ramp beyond side entrance, width 106 cm',         floor:'G',   notes:'Steep; handrails both sides; bypasses 10 steps', defaultStatus:'working' },
+      { id:'MEB-DR-03',  type:'door',  name:'Exhibition Road Main Auto Door',   detail:'Automatic double doors, main Exhibition Road entrance',     floor:'G',   notes:'Door opening 210 cm; also revolving door (210 cm) to right', defaultStatus:'working' },
+      { id:'MEB-RMP-03', type:'ramp',  name:'Exhibition Road Permanent Ramp',   detail:'Permanent ramp/slope along Exhibition Road',               floor:'G',   notes:'Slight gradient; leads to level pathway to right of entrance', defaultStatus:'working' },
+      { id:'MEB-STP-01', type:'steps', name:'Alumni / Café Steps',              detail:'8 external steps to Alumni Visitors Centre and College Café', floor:'G', notes:'Clearly marked; handrails both sides', defaultStatus:'working' },
+      { id:'MEB-STP-02', type:'steps', name:'Exhibition Road Main Steps',       detail:'6 external steps, main Exhibition Road entrance',          floor:'G',   notes:'Handrails both sides; ramp bypass via Exhibition Road slope', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'huxley', name: 'Huxley Building',
+    features: [
+      { id:'HUX-LFT-01', type:'lift',   name:'Rear Lift (Blackett Entrance)',   detail:'Standard lift, floors 0–10 incl. 6M. Door 115 cm; cabin 210×145 cm; 1360 kg', floor:'0–10', notes:'Mirror for reversing; visual indicator; audible announcer; hearing loop; tactile markings', defaultStatus:'working' },
+      { id:'HUX-RMP-01', type:'ramp',   name:'Front Entrance Ramp',             detail:'Permanent ramp, front of building off Sherfield Building',  floor:'G', notes:'Gradient: slight; handrail on left going up; level landing at top', defaultStatus:'working' },
+      { id:'HUX-DR-01',  type:'door',   name:'Front Entrance Auto Door',        detail:'Automatic double doors, front entrance off Sherfield Building', floor:'G', notes:'Door opening 151 cm; step-free via ramp', defaultStatus:'working' },
+      { id:'HUX-WC-01',  type:'toilet', name:'Accessible Toilet (Level 0)',     detail:'Shared toilet, level 0. 150×186 cm; door 94 cm',           floor:'0', notes:'Right-hand transfer (84 cm); dropdown rail; door may be difficult to open', defaultStatus:'working' },
+      { id:'HUX-WC-02',  type:'toilet', name:'Accessible Toilet (Level 3)',     detail:'Shared toilet near Blackett entrance, level 3',            floor:'3', notes:'Similar to level 0 toilet', defaultStatus:'working' },
+      { id:'HUX-WC-03',  type:'toilet', name:'Accessible Toilet (Level 6M)',    detail:'Shared toilet, level 6M',                                  floor:'6M', notes:'', defaultStatus:'working' },
+      { id:'HUX-WC-04',  type:'toilet', name:'Accessible Toilet (Level 7)',     detail:'Shared toilet, level 7',                                   floor:'7', notes:'Left-hand transfer', defaultStatus:'working' },
+      { id:'HUX-WC-05',  type:'toilet', name:'Accessible Toilet (Level 0 Rear)',detail:'Shared toilet, right on exiting rear lifts, level 0',     floor:'0', notes:'OUT OF USE at time of AccessAble survey', defaultStatus:'broken' },
+      { id:'HUX-HLP-01', type:'hearing',name:'Lecture Theatre Hearing Loops',   detail:'Fixed hearing loops in multiple lecture theatres and classrooms throughout the building', floor:'Various', notes:'Fixed loops; multiple teaching spaces', defaultStatus:'working' },
+      { id:'HUX-HLP-02', type:'hearing',name:'Room 306 Hearing Loop',           detail:'Fixed hearing loop, Lecture Theatre 306, level 3',        floor:'3', notes:'Tested 26/01/2023; working', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'bessemer', name: 'Bessemer Building',
+    features: [
+      { id:'BES-LFT-01', type:'lift',  name:'Platform Lift (Main Entrance)',    detail:'Platform lift, front right of entrance, bypasses 14 steps. Door 100 cm; cabin 100×190 cm; 300 kg', floor:'3', notes:'Separate entry/exit doors; tactile markings', defaultStatus:'working' },
+      { id:'BES-RMP-01', type:'ramp',  name:'Nanotechnology Access Ramp',       detail:'Internal ramp, access to London Centre for Nanotechnology, level 3', floor:'3', notes:'Slight gradient; no handrails', defaultStatus:'working' },
+      { id:'BES-RMP-02', type:'ramp',  name:'Biology Dept Access Ramp',         detail:'Internal ramp, access to Biology department, level 2',    floor:'2', notes:'Slight gradient; no handrails', defaultStatus:'working' },
+      { id:'BES-DR-01',  type:'door',  name:'Main Entrance Auto Door',          detail:'Automatic double doors, front entrance, level 3. Door opening 136 cm', floor:'3', notes:'Automatic; canopy', defaultStatus:'working' },
+      { id:'BES-STP-01', type:'steps', name:'Main Entrance Steps',              detail:'14 external steps, front entrance',                        floor:'G', notes:'Tactile paving; clearly marked; handrails both sides', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'skempton', name: 'Skempton Building',
+    features: [
+      { id:'SKM-LFT-01', type:'lift',   name:'Main Lift',                       detail:'Standard lift, ahead and to the left on entering. Floors 0–5. Door 84 cm; cabin 157×122 cm; 800 kg', floor:'0–5', notes:'Visual indicator; mirror; 11 m from entrance', defaultStatus:'working' },
+      { id:'SKM-LFT-02', type:'lift',   name:'Stair Lift (Floors 5–6)',         detail:'Chair stair lift, rear stairs between 5th and 6th floor. Door 80 cm; cabin 82×102 cm', floor:'5–6', notes:'Staff notification required; 59 m from main lifts; heavy double doors; no visual/audible indicators', defaultStatus:'working' },
+      { id:'SKM-RMP-01', type:'ramp',   name:'Front Entrance Ramps',            detail:'Permanent ramps either side of front entrance off Imperial College Road', floor:'G', notes:'Gradient: steep; level landing at top; no handrails; bypasses 5 steps', defaultStatus:'working' },
+      { id:'SKM-DR-01',  type:'door',   name:'Front Entrance Auto Door',        detail:'Automatic double doors, front entrance. Door opening 178 cm', floor:'G', notes:'Canopy; step-free via ramp', defaultStatus:'working' },
+      { id:'SKM-WC-01',  type:'toilet', name:'Ground Floor Toilet (Right)',     detail:'Shared toilet, right side of ground floor. 155×220 cm; door 102 cm', floor:'G', notes:'Right-hand transfer (89 cm); dropdown rail; emergency alarm (cord out of reach); 150 cm turning space', defaultStatus:'working' },
+      { id:'SKM-WC-02',  type:'toilet', name:'Accessible Toilet (Level 0)',     detail:'Shared toilet, level 0',                                   floor:'0', notes:'Similar to ground floor toilet', defaultStatus:'working' },
+      { id:'SKM-WC-03',  type:'toilet', name:'Accessible Toilet (Level 2)',     detail:'Shared toilet, level 2',                                   floor:'2', notes:'Similar to ground floor toilet', defaultStatus:'working' },
+      { id:'SKM-WC-04',  type:'toilet', name:'Accessible Toilet (Level 3)',     detail:'Shared toilet, level 3',                                   floor:'3', notes:'Similar to ground floor toilet', defaultStatus:'working' },
+      { id:'SKM-WC-05',  type:'toilet', name:'Wohl Lab Toilet',                 detail:'Shared toilet, Wohl Reach Out Lab',                        floor:'—', notes:'Similar to main building toilet', defaultStatus:'working' },
+      { id:'SKM-WC-06',  type:'toilet', name:'Lower Ground Toilet',             detail:'Shared toilet, level 0 lower ground. 142×214 cm; door 101 cm', floor:'0', notes:'Twist lock; door may be difficult; 9 m from main lifts', defaultStatus:'working' },
+      { id:'SKM-STP-01', type:'steps',  name:'Front Entrance Steps',            detail:'5 external steps, front entrance off Imperial College Road', floor:'G', notes:'No tactile paving', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'union', name: 'Imperial College Union',
+    features: [
+      { id:'ICU-LFT-01', type:'lift',   name:'Main Lift',                       detail:'Standard lift, in front of you on entrance. Floors G, 1, 2, 2M, 3. Door 90 cm; cabin 110×205 cm; 1000 kg', floor:'G–3', notes:'Visual indicator; audible announcer; mirror; tactile markings; no hearing loop', defaultStatus:'working' },
+      { id:'ICU-LFT-02', type:'lift',   name:'Small Lift',                      detail:'Standard lift (small), left on entrance. Floors G, 1, 2, 2M, 3. Door 70 cm; cabin 100×107 cm; 400 kg', floor:'G–3', notes:'Mirror; tactile markings; narrow door (70 cm)', defaultStatus:'working' },
+      { id:'ICU-DR-01',  type:'door',   name:'Beit Quadrangle Entrance Door',   detail:'Automatic push-pad double doors, front entrance off Beit Quadrangle. Door opening 159 cm', floor:'G', notes:'Keycard required at 80 cm; canopy; double set of doors', defaultStatus:'working' },
+      { id:'ICU-DR-02',  type:'door',   name:'Kensington Grove Manual Doors',   detail:'Heavy manual double doors, rear entrance off Kensington Grove. Door 112–114 cm', floor:'G', notes:'Intercom at 114 cm; double set of doors', defaultStatus:'working' },
+      { id:'ICU-WC-01',  type:'toilet', name:'Ground Floor Toilet (Left of Stage)', detail:'Shared toilet, rear of Metric through door left of stage. 144×234 cm; door 90 cm', floor:'G', notes:'Left-hand transfer (66 cm); dropdown rail; flush NOT on transfer side; emergency pull cord (functional)', defaultStatus:'working' },
+      { id:'ICU-WC-02',  type:'toilet', name:'2nd Floor Toilet',               detail:'Shared toilet, right on exiting lift, 2nd floor. 155×201 cm; door 86 cm',  floor:'2', notes:'Left-hand transfer (88 cm); dropdown rail; flush on transfer side; no 150 cm turning space', defaultStatus:'working' },
+      { id:'ICU-WC-03',  type:'toilet', name:'1st Floor Toilet',               detail:'Shared toilet, right on exiting lift, 1st floor. 154×194 cm; door 88 cm',  floor:'1', notes:'Left-hand transfer (88 cm); door heavy; no 150 cm turning space', defaultStatus:'working' },
+      { id:'ICU-SHW-01', type:'shower', name:'Accessible Shower (Floor 2M)',   detail:'Shared accessible shower, right on exiting lift, floor 2M',               floor:'2M', notes:'Adjustable shower head; handrails; flip-down seat (52 cm); similar female shower on 3rd floor', defaultStatus:'working' },
+      { id:'ICU-STP-01', type:'steps',  name:'Kensington Grove Entrance Steps', detail:'4 external steps, rear entrance off Kensington Grove',                    floor:'G', notes:'Steps in front of entrance', defaultStatus:'working' },
+      { id:'ICU-INT-01', type:'intercom',name:'Kensington Grove Intercom',      detail:'Wall-mounted intercom, rear entrance off Kensington Grove. Height 114 cm', floor:'G', notes:'No buzzer; intercom only', defaultStatus:'working' },
+      { id:'ICU-KCD-01', type:'keycard', name:'Beit Quadrangle Keycard',        detail:'Wall-mounted keycard reader, front entrance. Height 80 cm',               floor:'G', notes:'Keycard required for access', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'ethos', name: 'Ethos Sports Centre',
+    features: [
+      { id:'ETH-LFT-01', type:'lift',  name:'Entrance Platform Lift',          detail:'Platform lift, left on entrance, bypasses entrance steps. Door 91 cm; cabin 95×164 cm; 400 kg', floor:'G', notes:'Separate entry/exit doors', defaultStatus:'working' },
+      { id:'ETH-LFT-02', type:'lift',  name:'Internal Lift',                   detail:'Standard lift, internal building lift, multi-floor',        floor:'Multi', notes:'Step-free access throughout building', defaultStatus:'working' },
+      { id:'ETH-RMP-01', type:'ramp',  name:'Entrance Ramps',                  detail:'Two permanent ramps either side of entrance, bypass entrance steps', floor:'G', notes:'Two ramps available', defaultStatus:'working' },
+      { id:'ETH-RMP-02', type:'ramp',  name:'Pool Ramp (from Changing Rooms)', detail:'Internal ramp, pool access from changing rooms',            floor:'Lower', notes:'Handrail on right going up; alternative to pool steps', defaultStatus:'working' },
+      { id:'ETH-STP-01', type:'steps', name:'Pool Steps (from Changing Rooms)', detail:'2 internal steps, pool access from changing rooms',        floor:'Lower', notes:'Handrails both sides; unmarked', defaultStatus:'working' },
+      { id:'ETH-STP-02', type:'steps', name:'Spa Pool Steps',                  detail:'4 internal steps, access to spa pool. Platform lift available', floor:'Lower', notes:'Handrails both sides; platform lift available', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'faculty', name: 'Faculty Building',
+    features: [
+      { id:'FAC-LFT-01', type:'lift',   name:'Main Lift',                      detail:'Standard lift, floors 0, M, 1, 2, 3, 4',                   floor:'0–4', notes:'Hearing loop at faculty reception; heavy single doors to stairwell', defaultStatus:'working' },
+      { id:'FAC-DR-01',  type:'door',   name:'Main Entrance Auto Door',        detail:'Automatic double doors, front entrance. Door opening 105 cm. Second set: single auto door', floor:'G', notes:'Two sets of automatic doors', defaultStatus:'working' },
+      { id:'FAC-WC-01',  type:'toilet', name:'1st Floor Toilet',              detail:'Shared toilet, middle of 1st floor, 25 m from entrance. 150×220 cm; door 100 cm', floor:'1', notes:'Right-hand transfer (80 cm); transfer space obstructed by bins; 150 cm turning space; door may be difficult', defaultStatus:'working' },
+      { id:'FAC-WC-02',  type:'toilet', name:'Level 2 Toilet',                detail:'Shared toilet, rear of lifts, level 2. 150×218 cm; door 101 cm', floor:'2', notes:'Right-hand transfer (80 cm); twist lock; door heavy; 150 cm turning space', defaultStatus:'working' },
+      { id:'FAC-WC-03',  type:'toilet', name:'Level 3 Toilet',                detail:'Shared toilet, rear of lifts, level 3. 150×218 cm; door 101 cm', floor:'3', notes:'Identical to level 2 toilet', defaultStatus:'working' },
+      { id:'FAC-WC-04',  type:'toilet', name:'Level 4 Toilet',                detail:'Shared toilet, rear of lifts, level 4. 150×218 cm; door 101 cm', floor:'4', notes:'Identical to level 2 toilet', defaultStatus:'working' },
+      { id:'FAC-HLP-01', type:'hearing',name:'Faculty Reception Hearing Loop', detail:'Fixed hearing loop at faculty reception, ground floor',     floor:'G', notes:'Available on request; staff trained', defaultStatus:'working' },
+      { id:'FAC-RMP-01', type:'ramp',   name:'Rear Entrance Ramp',            detail:'Internal ramp, access to rear entrance. Width 115 cm',     floor:'—', notes:'Steep gradient; handrail on left going up', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'electrical-engineering', name: 'Electrical Engineering',
+    features: [
+      { id:'ELE-LFT-01', type:'lift',   name:'Main Lift',                      detail:'Standard lift, multi-floor',                               floor:'Multi', notes:'', defaultStatus:'working' },
+      { id:'ELE-DR-01',  type:'door',   name:'Main Entrance Auto Door',        detail:'Automatic door, main entrance, step-free',                 floor:'G', notes:'Dropped kerb with tactile paving between car park and building', defaultStatus:'working' },
+      { id:'ELE-RMP-01', type:'ramp',   name:'Level 2 Internal Ramp',          detail:'Internal ramp, access to accessible toilet, goods lift, rooms 201–202, level 2', floor:'2', notes:'Slight gradient; no handrails', defaultStatus:'working' },
+      { id:'ELE-WC-01',  type:'toilet', name:'Level 2 Accessible Toilet',      detail:'Shared toilet, right on entering main entrance, level 2. 150×250 cm; door 90 cm', floor:'2', notes:'Left-hand transfer; door may be difficult to open; locking handle', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'rsm', name: 'Royal School of Mines',
+    features: [
+      { id:'RSM-LFT-01', type:'lift',   name:'Main Lift (RSM Entrance)',        detail:'Standard lift, left on entrance, floors LG–4',            floor:'LG–4', notes:'Heavy double doors to lift lobby on all floors', defaultStatus:'working' },
+      { id:'RSM-LFT-02', type:'lift',   name:'Aston Webb Wing Platform Lift',   detail:'Platform lift, Aston Webb Wing. Door 90 cm; cabin 110×150 cm; 400 kg', floor:'—', notes:'Separate entry/exit; no visual/audible indicator; no hearing loop; no Braille', defaultStatus:'working' },
+      { id:'RSM-WC-01',  type:'toilet', name:'2nd Floor Toilet',               detail:'Shared toilet, 2nd floor. 170×165 cm; door 96 cm',        floor:'2', notes:'Right-hand transfer (100 cm); dropdown rail; twist lock; door may be difficult to open', defaultStatus:'working' },
+      { id:'RSM-STP-01', type:'steps',  name:'Main Entrance Stairs',           detail:'15+ internal steps between floors, entrance foyer 6 m from Bessemer entrance', floor:'Multi', notes:'Deep (18 cm+); clearly marked; handrail on right going up', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'chemistry', name: 'Chemistry Building',
+    features: [
+      { id:'CHM-LFT-01', type:'lift',   name:'Wolfson Link Platform Lift',      detail:'Platform lift, Chemistry/Wolfson Building Link Entrance. Door 106 cm; cabin 106×162 cm; 300 kg', floor:'G', notes:'Separate entry/exit; staff notification required; no visual/audible indicators', defaultStatus:'working' },
+      { id:'CHM-LFT-02', type:'lift',   name:'Chemistry Central Lift',          detail:'Standard lift, Chemistry Central, multi-floor',           floor:'Multi', notes:'', defaultStatus:'working' },
+      { id:'CHM-RMP-01', type:'ramp',   name:'Wolfson Link Entrance Ramp',      detail:'Entrance ramp, Wolfson Building Link Entrance, ground floor', floor:'G', notes:'Slight gradient', defaultStatus:'working' },
+      { id:'CHM-WC-01',  type:'toilet', name:'Central Lift Area Toilet',        detail:'Shared toilet near Chemistry Central lift. 170×255 cm; door 96 cm', floor:'—', notes:'150 cm turning space; locking handle; horizontal grab rail', defaultStatus:'working' },
+      { id:'CHM-HLP-01', type:'hearing',name:'Wolfson Reception Hearing Loop',  detail:'Portable hearing loop, Chemistry/Wolfson Building Reception', floor:'G', notes:'Signed; staff trained', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'library', name: 'Abdus Salam Library',
+    features: [
+      { id:'LIB-LFT-01', type:'lift',   name:'Entrance Platform Lift',         detail:'Platform lift, main entrance area, overcomes entrance steps', floor:'G', notes:'Slight ramp to access lift', defaultStatus:'working' },
+      { id:'LIB-RMP-01', type:'ramp',   name:'Research Study Space Ramp',      detail:'Internal ramp, rear of library, ground floor',             floor:'G', notes:'Slight gradient; no handrails; double automatic doors at top', defaultStatus:'working' },
+      { id:'LIB-RMP-02', type:'ramp',   name:'Wolfson Study Space Ramp',       detail:'Internal ramp, access to Wolfson Study Space, ground floor', floor:'G', notes:'Slight gradient; handrails both sides; double automatic doors at top', defaultStatus:'working' },
+      { id:'LIB-DR-01',  type:'door',   name:'Research Study Space Doors',     detail:'Automatic double doors, top of ramp to Research Study Space', floor:'G', notes:'Double automatic doors', defaultStatus:'working' },
+      { id:'LIB-DR-02',  type:'door',   name:'Wolfson Study Space Doors',      detail:'Automatic double doors, top of ramp to Wolfson Study Space', floor:'G', notes:'Double automatic doors', defaultStatus:'working' },
+      { id:'LIB-HLP-01', type:'hearing',name:'Welcome Desk Hearing Loop',      detail:'Portable hearing loop at Welcome Reception, main entrance', floor:'G', notes:'Signed; staff trained', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'health-centre', name: 'Imperial College Health Centre',
+    features: [
+      { id:'HCE-DR-01',  type:'door',   name:'Main Entrance Auto Door',        detail:'Automatic push-pad double doors, front of venue (left end of Southside Halls). Door opening 119 cm', floor:'G', notes:'Push pad; intercom at 120 cm; canopy; double set of doors; ramped/sloped access', defaultStatus:'working' },
+      { id:'HCE-WC-01',  type:'toilet', name:'Reception Waiting Area Toilet',  detail:'Shared toilet (Room G32), left of reception, 8 m from entrance. 152×212 cm; door 87 cm', floor:'G', notes:'Left-hand transfer; twist lock; door easy to open; no 150 cm turning space; wall grab rails on right', defaultStatus:'working' },
+      { id:'HCE-INT-01', type:'intercom',name:'Main Entrance Intercom',        detail:'Wall-mounted intercom, main entrance. Height 120 cm',       floor:'G', notes:'No buzzer', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'blackett', name: 'Blackett Laboratory',
+    features: [
+      { id:'BLK-LFT-01', type:'lift',   name:'Main Lift',                      detail:'Standard lift, main, floors 0–11',                         floor:'0–11', notes:'Step-free access throughout via lift', defaultStatus:'working' },
+      { id:'BLK-DR-01',  type:'door',   name:'2nd Floor Walkway Auto Door',    detail:'Automatic double doors, off walkway at rear, 2nd floor. Door opening 247 cm', floor:'2', notes:'Large double automatic doors', defaultStatus:'working' },
+      { id:'BLK-RMP-01', type:'ramp',   name:"Queen's Lawn Entrance Ramp",     detail:"Entrance ramp, Queen's Lawn entrance, ground floor. Width 122 cm", floor:'G', notes:'', defaultStatus:'working' },
+      { id:'BLK-RMP-02', type:'ramp',   name:'Rear Entrance Ramp',             detail:'Internal ramp, access to rear entrance. Width 115 cm',     floor:'—', notes:'Steep gradient; handrail on left going up', defaultStatus:'working' },
+      { id:'BLK-WC-01',  type:'toilet', name:'Level 1 Accessible Toilet',      detail:'Shared toilet, left on exiting lift, floor 1. 190×218 cm; door 87 cm', floor:'1', notes:'Right-hand transfer (120 cm); dropdown rail; flush on transfer side; 150 cm turning space; emergency alarm functional; 4 m from lift', defaultStatus:'working' },
+      { id:'BLK-HLP-01', type:'hearing',name:'LT1 (Room 327) Hearing Loop',   detail:'Fixed hearing loop, Lecture Theatre 1, level 3',           floor:'3', notes:'Tested by AccessAble; designated wheelchair spaces at back', defaultStatus:'working' },
+      { id:'BLK-HLP-02', type:'hearing',name:'LT2 (Room 113) Hearing Loop',   detail:'Fixed hearing loop, Lecture Theatre 2, level 1',           floor:'1', notes:'Tested 22/01/2020; working; wheelchair spaces front and back', defaultStatus:'working' },
+      { id:'BLK-HLP-03', type:'hearing',name:'LT3 (Room 112) Hearing Loop',   detail:'Fixed hearing loop, Lecture Theatre 3, level 1',           floor:'1', notes:'Tested 23/01/2020; push pad doors; wheelchair spaces at back', defaultStatus:'working' },
+      { id:'BLK-HLP-04', type:'hearing',name:'Room 147 Hearing Loop',          detail:'Fixed hearing loop, Lecture Theatre 147, level 1',         floor:'1', notes:'Tested 24/01/2020; working', defaultStatus:'working' },
+      { id:'BLK-HLP-05', type:'hearing',name:'Room 139 Hearing Loop',          detail:'Fixed hearing loop, Lecture Theatre 139, level 1',         floor:'1', notes:'No visual fire alarm beacon', defaultStatus:'working' },
+      { id:'BLK-WSP-01', type:'wheelchair',name:'LT2 Wheelchair Spaces',       detail:'Designated wheelchair spaces, Lecture Theatre 2 (Room 113), level 1', floor:'1', notes:'Spaces at front and back of theatre', defaultStatus:'working' },
+      { id:'BLK-WSP-02', type:'wheelchair',name:'LT3 Wheelchair Spaces',       detail:'Designated wheelchair spaces, Lecture Theatre 3 (Room 112), level 1', floor:'1', notes:'Spaces at back; level access from entrance', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'bone', name: 'Bone Building',
+    features: [
+      { id:'BON-LFT-01', type:'lift',   name:'Main Lift',                      detail:'Standard lift, straight ahead on entering, floors 1–6. Door 110 cm; cabin 160×150 cm; 1000 kg', floor:'1–6', notes:'Hearing loop; mirror; tactile markings; low lighting', defaultStatus:'working' },
+      { id:'BON-LFT-02', type:'lift',   name:'Stairwell Lift (Small)',         detail:'Standard lift (small), middle of stairwell, rear. Floors 1–4. Door 50 cm; cabin 70×100 cm; 375 kg', floor:'1–4', notes:'Very narrow door (50 cm); hearing loop; low lighting', defaultStatus:'working' },
+      { id:'BON-LFT-03', type:'lift',   name:'Internal Platform Lift',         detail:'Platform lift, overcomes internal stepped level changes',   floor:'—', notes:'Bypasses internal steps', defaultStatus:'working' },
+      { id:'BON-RMP-01', type:'ramp',   name:'Main Entrance Ramp',             detail:'Entrance ramp, front entrance, level 2. Width 118 cm',     floor:'2', notes:'4 steps nearby with no handrails; turnstiles (88 cm gate, 60 cm turnstile)', defaultStatus:'working' },
+      { id:'BON-RMP-02', type:'ramp',   name:'Rear Entrance Ramp',             detail:'Entrance ramp, to left of rear entrance. Steep gradient',  floor:'—', notes:'Permanent; no level landing at top; bypasses steps', defaultStatus:'working' },
+      { id:'BON-DR-01',  type:'door',   name:'Rear Entrance Auto Door',        detail:'Automatic push-pad double doors, rear entrance. Door opening 180 cm', floor:'—', notes:'Keycard required (85 cm); second set heavy manual doors (180 cm); steep ramp to left', defaultStatus:'working' },
+      { id:'BON-WC-00',  type:'toilet', name:'No Accessible Toilet in Building',detail:'No accessible toilet in Bone Building — use Roderic Hill Building', floor:'N/A', notes:'Nearest accessible toilets are in Roderic Hill Building', defaultStatus:'unavailable' },
+      { id:'BON-STP-01', type:'steps',  name:'Room B228A Steps',               detail:'3 internal steps, access to Room B228A',                   floor:'—', notes:'Clearly marked; no handrails', defaultStatus:'working' },
+      { id:'BON-STP-02', type:'steps',  name:'Rear Level 3 Steps',             detail:'8 internal steps, access to rear of building on level 3',  floor:'3', notes:'Clearly marked; handrails both sides; similar on level 4', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'business-school', name: 'Business School',
+    features: [
+      { id:'BUS-LFT-01', type:'lift',   name:'Main Lift',                      detail:'Standard lift, right on entrance, floors B, G, UG, 1, 2, 3', floor:'B–3', notes:'', defaultStatus:'working' },
+      { id:'BUS-WC-01',  type:'toilet', name:'Basement Floor Toilet',          detail:'Shared toilet, in front of lifts, basement floor. 200×200 cm; door 86 cm', floor:'B', notes:'Right-hand transfer; twist lock; door heavy; no 150 cm turning space; 10 m from lifts', defaultStatus:'working' },
+      { id:'BUS-RMP-01', type:'ramp',   name:'Ground Floor Study Area Ramp',   detail:'Internal ramp, access to group study areas 14–20. Width 100 cm', floor:'G', notes:'Slight gradient; no handrails', defaultStatus:'working' },
+      { id:'BUS-RMP-02', type:'ramp',   name:'1st Floor Access Ramp',          detail:'Internal ramp, access to all 1st floor areas. Width 140 cm', floor:'1', notes:'Steep gradient; handrail on right going up', defaultStatus:'working' },
+      { id:'BUS-RMP-03', type:'ramp',   name:'2nd Floor Access Ramp',          detail:'Internal ramp, access to all 2nd floor areas. Width 140 cm', floor:'2', notes:'Slight gradient; handrail on left going up; similar on 3rd floor', defaultStatus:'working' },
+      { id:'BUS-RMP-04', type:'ramp',   name:'2nd Floor Toilet Access Ramp',   detail:'Internal ramp, access to toilet facilities on 2nd floor',  floor:'2', notes:'Slight gradient; handrail on right; similar on 3rd floor', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'sir-ernst-chain', name: 'Sir Ernst Chain Building',
+    features: [
+      { id:'SEC-WC-01',  type:'toilet', name:'Level 7 Toilet',                 detail:'Shared toilet, left on exiting Chemistry/Wolfson lifts, level 7. 198×290 cm; door 88 cm', floor:'7', notes:'Right-hand transfer (130 cm); flush NOT on transfer side; emergency alarm not fully functional (cord out of reach); similar toilets on levels 4–6', defaultStatus:'working' },
+      { id:'SEC-WC-02',  type:'toilet', name:'Level 4 Toilet',                 detail:'Shared toilet, level 4. Left-hand transfer',               floor:'4', notes:'Similar to level 7; left-hand transfer', defaultStatus:'working' },
+      { id:'SEC-WC-03',  type:'toilet', name:'Level 5 Toilet',                 detail:'Shared toilet, level 5. Left-hand transfer',               floor:'5', notes:'Similar to level 7; left-hand transfer', defaultStatus:'working' },
+      { id:'SEC-WC-04',  type:'toilet', name:'Level 6 Toilet',                 detail:'Shared toilet, level 6. Left-hand transfer',               floor:'6', notes:'Similar to level 7; left-hand transfer', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'rcs1', name: 'RCS1 Building',
+    features: [
+      { id:'RCS-LFT-01', type:'lift',   name:'Main Lift',                      detail:'Standard lift, centre of building at rear of stairwell, floors 0–3', floor:'0–3', notes:'Hearing loop in lift', defaultStatus:'working' },
+      { id:'RCS-WC-01',  type:'toilet', name:'Level 0 Toilet',                 detail:'Shared toilet, next to Barber Laboratory, level 0. 147×198 cm; door 89 cm', floor:'0', notes:'Left-hand transfer (77 cm); transfer space obstructed by bins; "Not All Disabilities Are Visible" signage; no 150 cm turning space; door may be difficult', defaultStatus:'working' },
+      { id:'RCS-WC-02',  type:'toilet', name:'Level 1 Toilet',                 detail:'Shared toilet, level 1',                                   floor:'1', notes:'', defaultStatus:'working' },
+      { id:'RCS-WC-03',  type:'toilet', name:'Level 2 Toilets (×2)',           detail:'Two shared toilets, level 2',                              floor:'2', notes:'Two toilets on this level', defaultStatus:'working' },
+      { id:'RCS-WC-04',  type:'toilet', name:'Level 3 Toilet',                 detail:'Shared toilet, level 3',                                   floor:'3', notes:'', defaultStatus:'working' },
+      { id:'RCS-WC-05',  type:'toilet', name:'Level 1 Toilet (End of Corridor)',detail:'Shared toilet, right on exiting lift, end of corridor, 32 m from lift. 210×192 cm; door 94 cm', floor:'1', notes:'"Not All Disabilities Are Visible" signage; locking handle; door light; horizontal grab rail', defaultStatus:'working' },
+      { id:'RCS-WC-06',  type:'toilet', name:'Level 2 Corridor Toilet',        detail:'Shared toilet, level 2. 149×216 cm; door 97 cm',          floor:'2', notes:'26 m from lift; lever twist lock; door easy to open; no 150 cm turning space', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'city-and-guilds', name: 'City and Guilds Building',
+    features: [
+      { id:'CNG-LFT-01', type:'lift',   name:'Main Lift',                      detail:'Standard lift, multi-floor',                               floor:'Multi', notes:'', defaultStatus:'working' },
+      { id:'CNG-DR-01',  type:'door',   name:'Exhibition Road Auto Door',      detail:'Automatic double doors, front entrance off Exhibition Road. Door opening 210 cm', floor:'G', notes:'6 steps (handrails both sides) with ramp bypass; no tactile paving', defaultStatus:'working' },
+      { id:'CNG-WC-01',  type:'toilet', name:'Level 0 Toilet',                 detail:'Shared toilet, right side of level 0. 144×223 cm; door 100 cm', floor:'0', notes:'Left-hand transfer (77 cm); dropdown rail; flush on transfer side; emergency pull cord (functional); no 150 cm turning space; door may be difficult', defaultStatus:'working' },
+      { id:'CNG-SHW-01', type:'shower', name:'Accessible Shower Cubicles',     detail:'Standalone shower cubicles on levels 0 and 1',             floor:'0,1', notes:'Accessed by a deep step; also showers in standard toilets on levels 6 and 7', defaultStatus:'working' },
+      { id:'CNG-RMP-01', type:'ramp',   name:'Exhibition Road Permanent Ramp', detail:'Permanent ramp along Exhibition Road, right of entrance',   floor:'G', notes:'Slight gradient; leads to level pathway bypassing 6 steps', defaultStatus:'working' },
+      { id:'CNG-RMP-02', type:'ramp',   name:'Lift Entrance Ramp',             detail:'Internal ramp in front of lift entrance',                  floor:'—', notes:'Slight gradient', defaultStatus:'working' },
+      { id:'CNG-STP-01', type:'steps',  name:'Exhibition Road Entrance Steps', detail:'6 external steps, front entrance off Exhibition Road',     floor:'G', notes:'Handrails both sides; no tactile paving', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'roderic-hill', name: 'Roderic Hill Building',
+    features: [
+      { id:'RDH-LFT-01', type:'lift',   name:'Main Lift',                      detail:'Standard lift, multi-floor',                               floor:'Multi', notes:'Step-free access throughout building', defaultStatus:'working' },
+      { id:'RDH-RMP-01', type:'ramp',   name:'Front Entrance Ramp',            detail:'Entrance ramp, front entrance, level 2. Width 118 cm',    floor:'2', notes:'', defaultStatus:'working' },
+      { id:'RDH-DR-01',  type:'door',   name:'Bone Building Link Door',        detail:'Manual heavy double door, between Roderic Hill and Bone Buildings', floor:'—', notes:'Door opening 130 cm; heavy; opens both ways', defaultStatus:'working' },
+      { id:'RDH-WC-01',  type:'toilet', name:'Level 3 Toilet',                 detail:'Shared toilet, left side of main corridor, level 3. 195×196 cm; door 86 cm', floor:'3', notes:'150 cm turning space; lever twist lock; door may be difficult; 13 m from lift', defaultStatus:'working' },
+      { id:'RDH-WC-02',  type:'toilet', name:'Level 5 Toilet',                 detail:'Shared toilet, along level 5 corridor. 238×250 cm; door 97 cm', floor:'5', notes:'150 cm turning space; lever twist lock; door easy to open; horizontal grab rail; 15 m from lift', defaultStatus:'working' },
+      { id:'RDH-WC-03',  type:'toilet', name:'Level 6 Toilet',                 detail:'Shared toilet, level 6. 199×238 cm; door 98 cm',           floor:'6', notes:'150 cm turning space; twist lock; door easy to open; horizontal grab rail; 13 m from lift', defaultStatus:'working' },
+      { id:'RDH-STP-01', type:'steps',  name:'Main Entrance Steps',            detail:'4 external steps, front entrance, enters building on level 2', floor:'2', notes:'No handrails; no tactile paving; turnstiles (88 cm gate / 60 cm turnstile)', defaultStatus:'working' },
+      { id:'RDH-STP-02', type:'steps',  name:'Bone Building Link Steps',       detail:'8 internal steps, access to Bone Building',               floor:'—', notes:'Clearly marked; handrails both sides', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'sir-alexander-fleming', name: 'Sir Alexander Fleming Building',
+    features: [
+      { id:'SAF-LFT-01', type:'lift',   name:'Main Lifts',                     detail:'Standard lift, floors G, 1, 2, 3, 4, 5, 6',               floor:'G–6', notes:'', defaultStatus:'working' },
+      { id:'SAF-WC-01',  type:'toilet', name:'Ground Floor Rear Toilet',       detail:'Shared toilet, rear right of building, ground floor. 131×200 cm; door 95 cm', floor:'G', notes:'Left-hand transfer; locking handle; door easy to open; no 150 cm turning space; 40 m from entrance', defaultStatus:'working' },
+      { id:'SAF-WC-02',  type:'toilet', name:'Ground Floor Entrance Toilet',   detail:'Shared toilet with shower, left on entering through main entrance', floor:'G', notes:'Left-hand transfer; includes shower', defaultStatus:'working' },
+      { id:'SAF-WC-03',  type:'toilet', name:'Floors 1–6 Toilets',             detail:'Shared toilet opposite main lifts, one per floor, floors 1–6', floor:'1–6', notes:'All left-hand transfer; one per floor', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'william-penney', name: 'William Penney Laboratory',
+    features: [
+      { id:'WPL-WC-01',  type:'toilet', name:'Foyer Accessible Toilet',        detail:'Shared toilet, main entrance foyer, 4 m from entrance. 144×162 cm; door 98 cm', floor:'G', notes:'Left-hand transfer (73 cm); dropdown rail; flush on transfer side; locking handle; door heavy; opens inward; emergency alarm functional; mirror at low level', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'acex', name: 'ACEX Building',
+    features: [
+      { id:'ACE-WC-01',  type:'toilet', name:'Level 1 Accessible Toilet',      detail:'Shared toilet, right side on entering, 8 m from entrance, level 1. 155×285 cm; door 90 cm', floor:'1', notes:'Right-hand transfer; locking handle; door easy to open; 150 cm turning space; wall grab rails both sides', defaultStatus:'working' },
+    ]
+  },
+  {
+    id: 'disability-advisory', name: 'Disability Advisory Service (Sherfield L5)',
+    features: [
+      { id:'DAS-WC-00',  type:'toilet', name:'No Accessible Toilet in DAS',    detail:'No accessible toilet in DAS — nearest in SALC (Level 5), via main lift lobby', floor:'5', notes:'Nearest accessible toilet in Seminar and Learning Centre (SALC)', defaultStatus:'unavailable' },
+    ]
+  },
+  {
+    id: 'occupational-health', name: 'Occupational Health (Sherfield L4)',
+    features: [
+      { id:'OCC-WC-01',  type:'toilet', name:'Corridor Accessible Toilet',     detail:'Shared toilet, right on entering Occupational Health corridor, level 4', floor:'4', notes:'Accessed from main lift; corridor to left as you exit lift', defaultStatus:'working' },
+    ]
+  },
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let currentView = 'buildings'; // 'buildings' | 'types'
+let currentFilter = 'all';
+let modalState = null;
+let importPreview = null;
+let qrLanding = { selectedAnswer: null, submitted: false }; // 'yes' | 'no' | null
+
+function loadReports()  { try { return JSON.parse(localStorage.getItem(LS_REPORTS)  || '{}'); } catch { return {}; } }
+function loadOverrides(){ try { return JSON.parse(localStorage.getItem(LS_OVERRIDE) || '{}'); } catch { return {}; } }
+function loadImported() { try { return JSON.parse(localStorage.getItem(LS_IMPORTED) || '[]'); } catch { return []; } }
+
+function saveReports(r)  { localStorage.setItem(LS_REPORTS,  JSON.stringify(r)); }
+function saveOverrides(o){ localStorage.setItem(LS_OVERRIDE, JSON.stringify(o)); }
+function saveImported(b) { localStorage.setItem(LS_IMPORTED, JSON.stringify(b)); }
+
+// Merge SEED + imported buildings
+function getAllBuildings() {
+  const imported = loadImported();
+  const merged = [...SEED];
+  for (const b of imported) {
+    const idx = merged.findIndex(x => x.id === b.id);
+    if (idx >= 0) {
+      // Merge features: add new ones, skip duplicates
+      const existingIds = new Set(merged[idx].features.map(f => f.id));
+      for (const f of b.features) {
+        if (!existingIds.has(f.id)) merged[idx].features.push(f);
+      }
+    } else {
+      merged.push(b);
+    }
+  }
+  return merged;
+}
+
+// ─────────────────────────────────────────────
+// TRUST / CONFIDENCE ENGINE
+// ─────────────────────────────────────────────
+const DECAY_LAMBDA = 0.05; // per hour
+
+function computeStatus(featureId, defaultStatus) {
+  const overrides = loadOverrides();
+  const ov = overrides[featureId];
+  if (ov) {
+    return {
+      status: ov.status,
+      confidence: 'staff',
+      reportCount: 0,
+      updatedAt: ov.timestamp,
+      note: ov.note,
+      isOverride: true,
+    };
+  }
+  if (defaultStatus === 'unavailable') {
+    return { status: 'unavailable', confidence: null, reportCount: 0, updatedAt: null };
+  }
+  const allReports = loadReports();
+  const reps = allReports[featureId] || [];
+  if (!reps.length) {
+    return { status: defaultStatus || 'working', confidence: null, reportCount: 0, updatedAt: null };
+  }
+  const now = Date.now();
+  const scores = { working: 0, partial: 0, broken: 0 };
+  for (const r of reps) {
+    const hoursAgo = (now - new Date(r.timestamp).getTime()) / 3600000;
+    const weight = Math.exp(-DECAY_LAMBDA * hoursAgo);
+    if (scores[r.status] !== undefined) scores[r.status] += weight;
+  }
+  const total = scores.working + scores.partial + scores.broken;
+  const dominant = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  const ratio = total > 0 ? scores[dominant] / total : 0;
+  const confidence = total < 0.1 ? null : ratio > 0.75 ? 'high' : ratio > 0.5 ? 'medium' : 'low';
+  const lastReport = reps[reps.length - 1];
+  return {
+    status: dominant,
+    confidence,
+    reportCount: reps.length,
+    updatedAt: lastReport.timestamp,
+    note: lastReport.note,
+    isOverride: false,
+  };
+}
+
+function addReport(featureId, status, note, source = 'web') {
+  const all = loadReports();
+  if (!all[featureId]) all[featureId] = [];
+  all[featureId].push({ status, note, timestamp: new Date().toISOString(), source });
+  // Keep last 50 reports per feature
+  if (all[featureId].length > 50) all[featureId] = all[featureId].slice(-50);
+  saveReports(all);
+}
+
+function setOverride(featureId, status, note) {
+  const all = loadOverrides();
+  if (status === null) { delete all[featureId]; }
+  else { all[featureId] = { status, note, timestamp: new Date().toISOString() }; }
+  saveOverrides(all);
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function timeAgo(isoStr) {
+  if (!isoStr) return '';
+  const diff = (Date.now() - new Date(isoStr).getTime()) / 1000;
+  if (diff < 60)     return 'just now';
+  if (diff < 3600)   return Math.round(diff/60) + 'm ago';
+  if (diff < 86400)  return Math.round(diff/3600) + 'h ago';
+  return Math.round(diff/86400) + 'd ago';
+}
+
+function toUKTime(isoStr) {
+  if (!isoStr) return '';
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London',
+      hour: '2-digit', minute: '2-digit',
+      timeZoneName: 'short',
+    }).format(new Date(isoStr));
+  } catch { return ''; }
+}
+
+function lastUpdatedStr(isoStr) {
+  if (!isoStr) return '';
+  return `${timeAgo(isoStr)} · ${toUKTime(isoStr)}`;
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toSlug(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function findFeature(featureId) {
+  for (const b of getAllBuildings()) {
+    for (const f of b.features) {
+      if (f.id === featureId) return { building: b, feature: f };
+    }
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// STATUS BADGE HTML
+// ─────────────────────────────────────────────
+function statusBadgeHtml(computed, small = true) {
+  const s = STATUS_CFG[computed.status] || STATUS_CFG.working;
+  const cls = `status-${s.cls}`;
+  const confTag = computed.confidence && computed.confidence !== 'staff'
+    ? `<span class="confidence-tag">${computed.confidence} conf.</span>` : '';
+  const staffTag = computed.isOverride
+    ? `<span class="confidence-tag">✓ Verified</span>` : '';
+  const updated = computed.updatedAt
+    ? `<span class="updated-tag" title="${esc(toUKTime(computed.updatedAt))}">Updated ${lastUpdatedStr(computed.updatedAt)}</span>` : '';
+  const repCount = computed.reportCount > 0
+    ? `<span class="report-count">${computed.reportCount} report${computed.reportCount !== 1 ? 's' : ''}</span>` : '';
+  return `
+    <span class="status-badge ${cls}" aria-label="Status: ${s.label}">
+      <span class="status-dot" aria-hidden="true"></span>${esc(s.label)}
+    </span>${confTag}${staffTag}${updated}${repCount}`;
+}
+
+// ─────────────────────────────────────────────
+// FEATURE ROW HTML
+// ─────────────────────────────────────────────
+function featureRowHtml(feature, buildingId) {
+  const t = TYPES[feature.type] || { icon: '❓', label: feature.type };
+  const computed = computeStatus(feature.id, feature.defaultStatus);
+  const trackable = t.trackable && feature.defaultStatus !== 'unavailable';
+  const chevron = trackable
+    ? `<span class="feature-chevron" aria-hidden="true">›</span>`
+    : '';
+  // Whole row is a link to the feature subpage
+  return `
+    <a class="feature-row" href="#/feature/${esc(feature.id)}"
+       id="feature-row-${esc(feature.id)}"
+       data-type="${esc(feature.type)}" data-status="${esc(computed.status)}"
+       aria-label="${esc(feature.name)}, ${esc(STATUS_CFG[computed.status]?.label || computed.status)}${computed.updatedAt ? ', updated ' + lastUpdatedStr(computed.updatedAt) : ''}">
+      <div class="feature-icon" aria-hidden="true">${t.icon}</div>
+      <div class="feature-body">
+        <div class="feature-name">${esc(feature.name)}</div>
+        <div class="feature-detail">${esc(feature.detail)}</div>
+        ${feature.notes ? `<div class="feature-detail" style="font-style:italic;margin-top:2px">${esc(feature.notes)}</div>` : ''}
+        <div class="feature-meta">${statusBadgeHtml(computed)}</div>
+      </div>
+      ${chevron}
+    </a>`;
+}
+
+// ─────────────────────────────────────────────
+// SUMMARY BAR
+// ─────────────────────────────────────────────
+function computeSummary(buildings) {
+  let working = 0, partial = 0, broken = 0, unavail = 0;
+  for (const b of buildings) {
+    for (const f of b.features) {
+      const c = computeStatus(f.id, f.defaultStatus);
+      if (c.status === 'working') working++;
+      else if (c.status === 'partial' || c.status === 'maintenance') partial++;
+      else if (c.status === 'broken') broken++;
+      else unavail++;
+    }
+  }
+  return { working, partial, broken, unavail };
+}
+
+// ─────────────────────────────────────────────
+// FILTER LOGIC
+// ─────────────────────────────────────────────
+function featureMatchesFilter(feature) {
+  const computed = computeStatus(feature.id, feature.defaultStatus);
+  if (currentFilter === 'all')     return true;
+  if (currentFilter === 'broken')  return computed.status === 'broken';
+  if (currentFilter === 'partial') return computed.status === 'partial' || computed.status === 'maintenance';
+  return feature.type === currentFilter;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — BUILDINGS VIEW
+// ─────────────────────────────────────────────
+function renderBuildingsView(buildings) {
+  const filtered = buildings.map(b => ({
+    ...b,
+    features: b.features.filter(featureMatchesFilter)
+  })).filter(b => b.features.length > 0);
+
+  if (!filtered.length) {
+    return `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No features match this filter</div><div class="empty-sub">Try selecting a different filter above</div></div>`;
+  }
+
+  return filtered.map(b => {
+    const broken  = b.features.filter(f => computeStatus(f.id, f.defaultStatus).status === 'broken').length;
+    const partial = b.features.filter(f => { const s = computeStatus(f.id, f.defaultStatus).status; return s === 'partial' || s === 'maintenance'; }).length;
+    const hasIssues = broken > 0 || partial > 0;
+    const open = hasIssues || currentFilter !== 'all';
+    const chips = [
+      broken  ? `<span class="chip chip-broken">${broken} broken</span>`  : '',
+      partial ? `<span class="chip chip-partial">${partial} partial</span>` : '',
+    ].join('');
+    return `
+      <div class="building-card ${open ? 'open' : ''}" id="bld-${esc(b.id)}">
+        <div class="building-header" onclick="toggleBuilding('${esc(b.id)}')" tabindex="0"
+             role="button" aria-expanded="${open}" aria-controls="body-${esc(b.id)}"
+             onkeydown="if(event.key==='Enter'||event.key===' '){toggleBuilding('${esc(b.id)}')}">
+          <div class="building-name">${esc(b.name)}</div>
+          <div class="building-chips">${chips}</div>
+          <span class="chevron" aria-hidden="true">▼</span>
+        </div>
+        <div class="building-body" id="body-${esc(b.id)}">
+          ${b.features.map(f => featureRowHtml(f, b.id)).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// RENDER — TYPES VIEW
+// ─────────────────────────────────────────────
+function renderTypesView(buildings) {
+  const allFeatures = [];
+  for (const b of buildings) {
+    for (const f of b.features) {
+      if (featureMatchesFilter(f)) {
+        allFeatures.push({ ...f, _buildingName: b.name, _buildingId: b.id });
+      }
+    }
+  }
+
+  const byType = {};
+  for (const f of allFeatures) {
+    if (!byType[f.type]) byType[f.type] = [];
+    byType[f.type].push(f);
+  }
+
+  // Sort each type: broken first, then partial, then working
+  const statusOrder = { broken: 0, maintenance: 1, partial: 1, working: 2, unavailable: 3 };
+  for (const type of Object.keys(byType)) {
+    byType[type].sort((a, b) => {
+      const sa = statusOrder[computeStatus(a.id, a.defaultStatus).status] ?? 4;
+      const sb = statusOrder[computeStatus(b.id, b.defaultStatus).status] ?? 4;
+      return sa - sb;
+    });
+  }
+
+  const typeOrder = ['lift','ramp','toilet','door','hearing','shower','wheelchair','steps','parking','intercom','keycard','tactile'];
+  const orderedTypes = typeOrder.filter(t => byType[t]);
+  const extraTypes = Object.keys(byType).filter(t => !typeOrder.includes(t));
+
+  if (orderedTypes.length + extraTypes.length === 0) {
+    return `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">No features match this filter</div></div>`;
+  }
+
+  return [...orderedTypes, ...extraTypes].map(type => {
+    const feats = byType[type];
+    const t = TYPES[type] || { icon: '❓', label: type };
+    return `
+      <div class="type-section">
+        <div class="type-section-header">
+          <span class="type-section-icon" aria-hidden="true">${t.icon}</span>
+          <span class="type-section-title">${esc(t.label)}</span>
+          <span class="type-section-count">${feats.length} feature${feats.length !== 1 ? 's' : ''}</span>
+        </div>
+        ${feats.map(f => {
+          const computed = computeStatus(f.id, f.defaultStatus);
+          const trackable = (TYPES[f.type]?.trackable ?? false) && f.defaultStatus !== 'unavailable';
+          const chevron = trackable ? `<span class="feature-chevron" aria-hidden="true">›</span>` : '';
+          return `
+            <a class="feature-row" href="#/feature/${esc(f.id)}"
+               data-type="${esc(f.type)}" data-status="${esc(computed.status)}"
+               aria-label="${esc(f.name)}, ${esc(f._buildingName)}, ${esc(STATUS_CFG[computed.status]?.label || computed.status)}${computed.updatedAt ? ', updated ' + lastUpdatedStr(computed.updatedAt) : ''}">
+              <div class="feature-icon" aria-hidden="true">${t.icon}</div>
+              <div class="feature-body">
+                <div class="feature-name">${esc(f.name)}</div>
+                <div class="feature-detail" style="color:var(--accent);font-size:11px;margin-bottom:2px">${esc(f._buildingName)}</div>
+                <div class="feature-detail">${esc(f.detail)}</div>
+                <div class="feature-meta">${statusBadgeHtml(computed)}</div>
+              </div>
+              ${chevron}
+            </a>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// RENDER — MAIN APP
+// ─────────────────────────────────────────────
+function renderMain() {
+  const buildings = getAllBuildings();
+  const summary = computeSummary(buildings);
+  const filterBtns = TRACKABLE_FILTERS.map(f =>
+    `<button class="filter-btn ${currentFilter === f.id ? 'active' : ''}"
+       onclick="setFilter('${f.id}')"
+       aria-pressed="${currentFilter === f.id}">${esc(f.label)}</button>`
+  ).join('');
+
+  const content = currentView === 'buildings'
+    ? renderBuildingsView(buildings)
+    : renderTypesView(buildings);
+
+  return `
+    <header class="header" role="banner">
+      <div class="header-top">
+        <div class="header-logo" aria-hidden="true">♿</div>
+        <h1 class="header-title">IC Accessibility</h1>
+        <span class="header-badge">South Kensington</span>
+      </div>
+      <nav class="nav-tabs" role="tablist" aria-label="View">
+        <button class="nav-tab" role="tab" aria-selected="${currentView === 'buildings'}"
+          onclick="setView('buildings')">By Building</button>
+        <button class="nav-tab" role="tab" aria-selected="${currentView === 'types'}"
+          onclick="setView('types')">By Type</button>
+      </nav>
+    </header>
+    <div class="filter-bar" role="toolbar" aria-label="Filter features">${filterBtns}</div>
+    <div class="summary-bar" aria-live="polite" aria-label="Status summary">
+      <span class="summary-pill pill-working">✅ ${summary.working} working</span>
+      ${summary.partial ? `<span class="summary-pill pill-partial">⚠️ ${summary.partial} partial</span>` : ''}
+      ${summary.broken  ? `<span class="summary-pill pill-broken">🔴 ${summary.broken} broken</span>`  : ''}
+      ${summary.unavail ? `<span class="summary-pill pill-unavail">⬜ ${summary.unavail} unavailable</span>` : ''}
+    </div>
+    <main class="main" role="main">${content}</main>
+    <button class="fab" onclick="route('#/admin')" aria-label="Admin: import CSV data" title="Import CSV data">⚙️</button>
+  `;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — QR FEATURE PAGE
+// ─────────────────────────────────────────────
+function renderFeaturePage(featureId, source) {
+  const result = findFeature(featureId);
+  if (!result) {
+    return `<div class="qr-page"><button class="qr-back" onclick="route('#/')">← Back</button>
+      <div class="empty-state"><div class="empty-icon">❓</div><div class="empty-text">Feature not found</div><div class="empty-sub">ID: ${esc(featureId)}</div></div></div>`;
+  }
+  const { building, feature } = result;
+  const t = TYPES[feature.type] || { icon: '❓', label: feature.type };
+  const computed = computeStatus(featureId, feature.defaultStatus);
+  const s = STATUS_CFG[computed.status] || STATUS_CFG.working;
+  const trackable = (TYPES[feature.type]?.trackable ?? false) && feature.defaultStatus !== 'unavailable';
+  const qrBadge = source === 'qr' ? `<div class="staff-badge" style="margin-bottom:12px">📱 Scanned via QR code</div>` : '';
+
+  const uid = 'sr-' + featureId.replace(/[^a-z0-9]/gi, '');
+  const reportForm = trackable ? `
+    <div class="qr-card">
+      <div class="qr-report-title">Update status</div>
+      <form onsubmit="return submitFeatureForm(event,'${esc(featureId)}')" novalidate>
+        <fieldset style="border:none;padding:0;margin:0 0 14px">
+          <legend class="qr-note-label" style="margin-bottom:10px">What is the current status?</legend>
+          <div class="report-radio-group">
+            <input type="radio" name="${uid}" id="${uid}-w" value="working" class="report-radio-input">
+            <label for="${uid}-w" class="report-radio-label report-lbl-working">
+              <span class="status-option-icon" aria-hidden="true">✅</span>Working
+            </label>
+            <input type="radio" name="${uid}" id="${uid}-p" value="partial" class="report-radio-input">
+            <label for="${uid}-p" class="report-radio-label report-lbl-partial">
+              <span class="status-option-icon" aria-hidden="true">⚠️</span>Partial
+            </label>
+            <input type="radio" name="${uid}" id="${uid}-b" value="broken" class="report-radio-input">
+            <label for="${uid}-b" class="report-radio-label report-lbl-broken">
+              <span class="status-option-icon" aria-hidden="true">🔴</span>Broken
+            </label>
+          </div>
+        </fieldset>
+        <label class="qr-note-label" for="fp-note">Add a note <span style="font-weight:400;color:var(--text-3)">(optional)</span></label>
+        <textarea id="fp-note" name="note" class="note-input" rows="2"
+          placeholder="e.g. lift door stuck, button unresponsive…"></textarea>
+        <button type="submit" class="btn-primary">Submit report</button>
+      </form>
+    </div>` : '';
+
+  const sourceLink = feature.sourceUrl
+    ? `<a class="qr-source" href="${esc(feature.sourceUrl)}" target="_blank" rel="noopener">🔗 Full AccessAble guide</a>` : '';
+
+  return `
+    <div class="qr-page">
+      <button class="qr-back" onclick="history.back()" aria-label="Back">← Back</button>
+      <div class="qr-card">
+        <div class="qr-feature-icon" aria-hidden="true">${t.icon}</div>
+        <h1 class="qr-feature-name">${esc(feature.name)}</h1>
+        <div class="qr-building-name">${esc(building.name)}</div>
+        <p class="qr-detail">${esc(feature.detail)}</p>
+        ${feature.notes ? `<p class="qr-detail" style="font-style:italic">${esc(feature.notes)}</p>` : ''}
+        <div class="qr-status-large status-${s.cls}" style="margin-top:12px">
+          ${s.icon} ${esc(s.label)}
+        </div>
+        ${computed.isOverride ? `<div class="staff-badge" style="margin-top:8px">✓ Verified by Estates</div>` : ''}
+        <div class="qr-meta" style="margin-top:10px">
+          ${computed.updatedAt
+            ? `<span>Last updated: <strong>${lastUpdatedStr(computed.updatedAt)}</strong></span>`
+            : '<span>No reports yet — be the first!</span>'}
+          ${computed.reportCount > 0 ? `<span>${computed.reportCount} report${computed.reportCount !== 1 ? 's' : ''}</span>` : ''}
+          ${computed.confidence && computed.confidence !== 'staff' ? `<span>Confidence: ${computed.confidence}</span>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:12px">
+          ${sourceLink}
+          <a class="qr-source" href="#/qr/${esc(featureId)}">🔲 Generate / print QR code</a>
+        </div>
+      </div>
+      ${reportForm}
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — ADMIN / IMPORT PAGE
+// ─────────────────────────────────────────────
+function renderAdminPage() {
+  const imported = loadImported();
+  const importedCount = imported.reduce((n, b) => n + b.features.length, 0);
+  const schemaHtml = `
+    <div class="schema-box">
+      <strong>Expected columns (TSV or CSV, with header row):</strong><br>
+      <strong>1.</strong> Fixture ID &nbsp;
+      <strong>2.</strong> Building &nbsp;
+      <strong>3.</strong> Building Area/Zone &nbsp;
+      <strong>4.</strong> Fixture Type &nbsp;
+      <strong>5.</strong> Fixture Subtype<br>
+      <strong>6.</strong> Location Detail &nbsp;
+      <strong>7.</strong> Floor/Level &nbsp;
+      <strong>8.</strong> Access Type &nbsp;
+      <strong>9.</strong> Key Dimensions<br>
+      <strong>10.</strong> Operational Notes &nbsp;
+      <strong>11.</strong> Condition/Status &nbsp;
+      <strong>12.</strong> Source URL<br><br>
+      <strong>Status values:</strong> Operational → working &nbsp; Out of Service → broken &nbsp; Not Available → unavailable
+    </div>`;
+
+  const previewHtml = importPreview ? `
+    <div class="import-preview">
+      <div class="import-stats">
+        Parsed <strong>${importPreview.totalRows}</strong> rows across
+        <strong>${importPreview.buildings.length}</strong> buildings
+        (${importPreview.errors.length} errors skipped).
+        ${importPreview.errors.length ? `<br><span style="color:var(--broken)">${importPreview.errors.join('; ')}</span>` : ''}
+      </div>
+      <div class="preview-table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Building</th><th>Type</th><th>Name</th><th>Status</th></tr></thead>
+          <tbody>
+            ${importPreview.buildings.slice(0,5).flatMap(b =>
+              b.features.slice(0,3).map(f => `
+                <tr>
+                  <td>${esc(f.id)}</td>
+                  <td>${esc(b.name)}</td>
+                  <td>${TYPES[f.type]?.icon || ''} ${esc(f.type)}</td>
+                  <td>${esc(f.name)}</td>
+                  <td>${esc(f.defaultStatus)}</td>
+                </tr>`)
+            ).join('')}
+            ${importPreview.totalRows > 15 ? `<tr><td colspan="5" style="color:var(--text-3);text-align:center">… and ${importPreview.totalRows - 15} more</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>
+      <button class="btn-import" onclick="commitImport()">✅ Import ${importPreview.totalRows} features</button>
+      <button class="btn-clear" onclick="clearPreview()">Cancel</button>
+    </div>` : '';
+
+  return `
+    <header class="header" role="banner">
+      <div class="header-top">
+        <button class="qr-back" onclick="route('#/')" aria-label="Back to main view" style="margin:0">← Back</button>
+        <h1 class="header-title" style="margin-left:8px">Import Data</h1>
+      </div>
+    </header>
+    <div class="admin-page">
+      <div class="admin-subtitle">
+        Drag and drop a TSV or CSV file exported from your spreadsheet, or click to browse.
+        ${importedCount ? `<br><strong>${importedCount}</strong> features already imported.
+          <button onclick="clearImported()" style="color:var(--broken);background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px">Clear imported data</button>` : ''}
+      </div>
+      <div class="drop-zone" id="drop-zone"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)">
+        <div class="drop-zone-icon">📂</div>
+        <div class="drop-zone-text">Drop your TSV / CSV file here</div>
+        <div class="drop-zone-sub">or click to browse</div>
+        <input type="file" accept=".tsv,.csv,.txt" onchange="handleFileInput(event)" aria-label="Select TSV or CSV file">
+      </div>
+      ${previewHtml}
+      ${schemaHtml}
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — STATUS EDIT MODAL
+// ─────────────────────────────────────────────
+function renderModal() {
+  if (!modalState) return '';
+  const { featureId, buildingId } = modalState;
+  const result = findFeature(featureId);
+  if (!result) return '';
+  const { feature } = result;
+  const computed = computeStatus(featureId, feature.defaultStatus);
+  const t = TYPES[feature.type] || { icon: '❓', label: '' };
+  const opts = [
+    { s: 'working', icon: '✅', label: 'Working' },
+    { s: 'partial',  icon: '⚠️', label: 'Partial' },
+    { s: 'broken',   icon: '🔴', label: 'Broken'  },
+  ];
+  const sel = modalState.selectedStatus || computed.status;
+
+  return `
+    <div class="overlay open" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+         onclick="if(event.target===this)closeModal()">
+      <div class="sheet">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <h2 class="sheet-title" id="modal-title">${t.icon} ${esc(feature.name)}</h2>
+        <p class="sheet-subtitle">${esc(result.building.name)}</p>
+        <div class="status-grid" role="group" aria-label="Select status">
+          ${opts.map(o => `
+            <div class="status-option ${sel === o.s ? 'selected-'+o.s : ''}"
+                 onclick="selectStatus('${o.s}')"
+                 tabindex="0" role="radio" aria-checked="${sel === o.s}" aria-label="${o.label}"
+                 onkeydown="if(event.key==='Enter'||event.key===' ')selectStatus('${o.s}')">
+              <span class="status-option-icon" aria-hidden="true">${o.icon}</span>${o.label}
+            </div>`).join('')}
+        </div>
+        <textarea id="modal-note" class="note-input" rows="3"
+          placeholder="Optional note (e.g. 'door stuck on 3rd floor')"
+          aria-label="Optional note">${esc(modalState.note || '')}</textarea>
+        <button class="btn-primary" onclick="saveStatus()">Submit Report</button>
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — QR YES/NO LANDING PAGE
+// ─────────────────────────────────────────────
+function renderQRLanding(featureId) {
+  const result = findFeature(featureId);
+  if (!result) {
+    return `<div class="qrs-page"><div class="qrs-header"><button class="qrs-back" onclick="route('#/')">← Back</button></div>
+      <div class="qrs-body"><div class="empty-icon">❓</div><div class="empty-text">Feature not found</div></div></div>`;
+  }
+  const { building, feature } = result;
+  const t = TYPES[feature.type] || { icon: '❓', label: feature.type };
+  const computed = computeStatus(featureId, feature.defaultStatus);
+  const s = STATUS_CFG[computed.status] || STATUS_CFG.working;
+
+  if (qrLanding.submitted) {
+    return `
+      <div class="qrs-page">
+        <div class="qrs-header">
+          <button class="qrs-back" onclick="route('#/')">← All features</button>
+        </div>
+        <div class="qrs-body" style="justify-content:center">
+          <div class="qrs-submitted">
+            <span class="qrs-submitted-icon">${qrLanding.selectedAnswer === 'yes' ? '✅' : '🔴'}</span>
+            <h2 class="qrs-submitted-title">Thanks!</h2>
+            <p class="qrs-submitted-sub">
+              Your report has been saved and helps keep this data accurate for everyone on campus.
+            </p>
+            <div class="qrs-btn-row">
+              <button class="btn-primary" onclick="route('#/')">← Back to all features</button>
+              <button class="btn-secondary" onclick="resetQRLanding();route('#/feature/${esc(featureId)}?source=qr')">Report again</button>
+            </div>
+          </div>
+        </div>
+        <div class="qrs-footer">
+          <div class="qrs-footer-loc">
+            <strong>${t.icon} ${esc(feature.name)}</strong>
+            📍 ${esc(building.name)} · Floor ${esc(feature.floor)}
+          </div>
+          <button class="qrs-choose" onclick="route('#/')">Choose a different feature →</button>
+        </div>
+      </div>`;
+  }
+
+  const sel = qrLanding.selectedAnswer;
+  const canSubmit = sel !== null;
+  const currentStatus = `
+    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-3);margin-bottom:24px">
+      Currently: <span class="status-badge status-${s.cls}" style="font-size:11px">
+        <span class="status-dot"></span>${esc(s.label)}
+      </span>
+      ${computed.updatedAt ? `<span class="updated-tag">${lastUpdatedStr(computed.updatedAt)}</span>` : ''}
+    </div>`;
+
+  return `
+    <div class="qrs-page">
+      <div class="qrs-header">
+        <button class="qrs-back" onclick="route('#/')" aria-label="Back to all features">← Back</button>
+      </div>
+      <div class="qrs-body">
+        <h1 class="qrs-title">Does it work?</h1>
+        <div class="qrs-feature-info">
+          <span class="qrs-icon" aria-hidden="true">${t.icon}</span>
+          <span>${esc(feature.name)}</span>
+        </div>
+        ${currentStatus}
+        <div class="answer-row" role="group" aria-label="Is this feature working?">
+          <button class="answer-btn ${sel === 'yes' ? 'sel-yes' : ''}"
+            onclick="selectAnswer('yes')"
+            aria-pressed="${sel === 'yes'}"
+            aria-label="Yes, it is working">
+            <span class="ab-icon" aria-hidden="true">✅</span>
+            Yes
+          </button>
+          <button class="answer-btn ${sel === 'no' ? 'sel-no' : ''}"
+            onclick="selectAnswer('no')"
+            aria-pressed="${sel === 'no'}"
+            aria-label="No, it is not working">
+            <span class="ab-icon" aria-hidden="true">❌</span>
+            No
+          </button>
+        </div>
+        <div class="qrs-note-wrap">
+          <label class="qrs-note-label" for="qr-note">Add a note <span style="font-weight:400;color:var(--text-3)">(optional)</span></label>
+          <textarea id="qr-note" class="note-input" rows="2"
+            placeholder="e.g. lift door stuck, button unresponsive…"
+            aria-label="Optional note about this feature"></textarea>
+        </div>
+        <button class="qrs-confirm" ${canSubmit ? '' : 'disabled'}
+          onclick="${canSubmit ? `submitQRReport('${esc(featureId)}')` : ''}"
+          aria-disabled="${!canSubmit}">
+          Confirm
+        </button>
+      </div>
+      <div class="qrs-footer">
+        <div class="qrs-footer-loc">
+          <strong>${t.icon} ${esc(feature.name)}</strong>
+          📍 ${esc(building.name)} · Floor ${esc(feature.floor)}
+        </div>
+        <button class="qrs-choose" onclick="route('#/')" aria-label="Choose a different feature on the main page">
+          Choose a different feature →
+        </button>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — QR CODE GENERATOR PAGE
+// ─────────────────────────────────────────────
+function renderQRCodePage(featureId) {
+  const result = findFeature(featureId);
+  const label = result
+    ? `${result.building.name} — ${result.feature.name}`
+    : featureId;
+  const icon = result ? (TYPES[result.feature.type]?.icon || '♿') : '♿';
+  const floor = result ? result.feature.floor : '';
+  const targetUrl = window.location.href.replace(/#.*$/, '') + '#/feature/' + encodeURIComponent(featureId) + '?source=qr';
+
+  return `
+    <div class="qrp-page">
+      <div class="qrp-header">
+        <button class="qrs-back" onclick="history.back()" aria-label="Go back">← Back</button>
+        <span style="font-size:15px;font-weight:700">QR Code</span>
+      </div>
+      <div class="qrp-body">
+        <div class="qrp-card">
+          <div class="qrp-icon-row" aria-hidden="true">${icon}</div>
+          <div id="qr-canvas" aria-label="QR code for ${esc(label)}"></div>
+          <div class="qrp-label">${esc(label)}</div>
+          ${floor && floor !== '—' ? `<div class="qrp-sublabel">Floor ${esc(floor)}</div>` : ''}
+          <div class="qrp-sublabel" style="margin-top:4px">Scan to report if it's working</div>
+        </div>
+        <p class="qrp-url">${esc(targetUrl)}</p>
+        <div class="qrp-actions">
+          <button class="btn-print" onclick="window.print()">🖨 Print QR code</button>
+          <button class="btn-clear" onclick="navigator.clipboard?.writeText('${esc(targetUrl)}').then(()=>showToast('✅ URL copied!'))">📋 Copy link</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// ROUTING
+// ─────────────────────────────────────────────
+function getRoute() {
+  const hash = location.hash || '#/';
+  const hashQuery = hash.includes('?') ? hash.split('?')[1] : '';
+  const params = new URLSearchParams(hashQuery);
+  if (hash.startsWith('#/qr/')) {
+    const featureId = hash.slice('#/qr/'.length).split('?')[0];
+    return { page: 'qrcode', featureId };
+  }
+  if (hash.startsWith('#/feature/')) {
+    const featureId = hash.slice('#/feature/'.length).split('?')[0];
+    const source = params.get('source');
+    return { page: 'feature', featureId, source };
+  }
+  if (hash.startsWith('#/admin')) return { page: 'admin' };
+  return { page: 'main' };
+}
+
+function route(hash) {
+  location.hash = hash;
+}
+
+function renderApp() {
+  const r = getRoute();
+  const app = document.getElementById('app');
+  if (r.page === 'qrcode') {
+    app.innerHTML = renderQRCodePage(r.featureId);
+    // Initialise QR code after DOM is ready
+    setTimeout(() => {
+      const el = document.getElementById('qr-canvas');
+      if (el && window.QRCode) {
+        const url = window.location.href.replace(/#.*$/, '') + '#/feature/' + encodeURIComponent(r.featureId) + '?source=qr';
+        new QRCode(el, { text: url, width: 260, height: 260, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+      }
+    }, 0);
+  } else if (r.page === 'feature') {
+    if (r.source === 'qr') {
+      app.innerHTML = renderQRLanding(r.featureId);
+    } else {
+      app.innerHTML = renderFeaturePage(r.featureId, r.source) + renderModal();
+    }
+  } else if (r.page === 'admin') {
+    app.innerHTML = renderAdminPage() + renderModal();
+  } else {
+    app.innerHTML = renderMain() + renderModal();
+  }
+  // Restore focus if modal open
+  if (modalState) {
+    const note = document.getElementById('modal-note');
+    if (note && document.activeElement !== note) note.focus();
+  }
+}
+
+// ─────────────────────────────────────────────
+// EVENT HANDLERS
+// ─────────────────────────────────────────────
+function toggleBuilding(id) {
+  const card = document.getElementById('bld-' + id);
+  if (card) {
+    card.classList.toggle('open');
+    const btn = card.querySelector('.building-header');
+    if (btn) btn.setAttribute('aria-expanded', card.classList.contains('open'));
+  }
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  renderApp();
+}
+
+function setView(v) {
+  currentView = v;
+  renderApp();
+}
+
+function openModal(featureId, buildingId) {
+  const computed = computeStatus(featureId, '');
+  modalState = { featureId, buildingId, selectedStatus: computed.status, note: '' };
+  renderApp();
+  // Focus first status option
+  setTimeout(() => {
+    const first = document.querySelector('.status-option');
+    if (first) first.focus();
+  }, 100);
+}
+
+function closeModal() {
+  modalState = null;
+  renderApp();
+}
+
+function selectStatus(s) {
+  if (modalState) {
+    modalState.selectedStatus = s;
+    modalState.note = document.getElementById('modal-note')?.value || '';
+    renderApp();
+  }
+}
+
+function saveStatus() {
+  if (!modalState) return;
+  const note = document.getElementById('modal-note')?.value || '';
+  addReport(modalState.featureId, modalState.selectedStatus, note, 'web');
+  modalState = null;
+  renderApp();
+  showToast('✅ Status reported — thanks!');
+}
+
+function qrReport(featureId, status) {
+  const note = document.getElementById('qr-note')?.value || '';
+  addReport(featureId, status, note, 'qr');
+  showToast('✅ Thanks for your report!');
+  renderApp();
+}
+
+function submitFeatureForm(event, featureId) {
+  event.preventDefault();
+  const form = event.target;
+  const status = form.querySelector('input[type=radio]:checked')?.value;
+  if (!status) { showToast('Please select a status first'); return false; }
+  const note = form.querySelector('textarea[name=note]')?.value || '';
+  addReport(featureId, status, note, 'web');
+  showToast('✅ Status reported — thanks!');
+  renderApp();
+  return false;
+}
+
+function selectAnswer(answer) {
+  // Preserve the note text before re-rendering
+  const noteVal = document.getElementById('qr-note')?.value || '';
+  qrLanding.selectedAnswer = answer;
+  renderApp();
+  // Restore note text (input is recreated by innerHTML)
+  const noteEl = document.getElementById('qr-note');
+  if (noteEl) noteEl.value = noteVal;
+}
+
+function submitQRReport(featureId) {
+  const note = document.getElementById('qr-note')?.value || '';
+  const status = qrLanding.selectedAnswer === 'yes' ? 'working' : 'broken';
+  addReport(featureId, status, note, 'qr');
+  qrLanding.submitted = true;
+  renderApp();
+}
+
+function resetQRLanding() {
+  qrLanding = { selectedAnswer: null, submitted: false };
+}
+
+// ─────────────────────────────────────────────
+// CSV / TSV PARSER
+// ─────────────────────────────────────────────
+const TYPE_MAP = {
+  'lift': 'lift',
+  'ramp': 'ramp',
+  'steps': 'steps',
+  'automatic door': 'door',
+  'manual door': 'door',
+  'accessible toilet': 'toilet',
+  'accessible toilet (none available)': 'toilet',
+  'hearing loop': 'hearing',
+  'wheelchair space': 'wheelchair',
+  'intercom': 'intercom',
+  'keycard reader': 'keycard',
+  'tactile paving': 'tactile',
+  'accessible shower': 'shower',
+  'parking': 'parking',
+  'blue badge': 'parking',
+};
+
+const STATUS_MAP = {
+  'operational': 'working',
+  'out of service': 'broken',
+  'not available': 'unavailable',
+  'working': 'working',
+  'broken': 'broken',
+  'partial': 'partial',
+  'maintenance': 'maintenance',
+};
+
+function parseDelimited(text) {
+  // Auto-detect delimiter
+  const firstLine = text.split('\n')[0];
+  const tabCount   = (firstLine.match(/\t/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  const sep = tabCount >= commaCount ? '\t' : ',';
+
+  const lines = text.split('\n').map(l => l.trimEnd());
+  const errors = [];
+  const buildingMap = {};
+
+  // Skip header row
+  const dataLines = lines.slice(1).filter(l => l.trim());
+
+  for (let i = 0; i < dataLines.length; i++) {
+    const cols = sep === '\t'
+      ? dataLines[i].split('\t')
+      : parseCSVLine(dataLines[i]);
+
+    if (cols.length < 4) {
+      errors.push(`Row ${i+2}: too few columns (${cols.length})`);
+      continue;
+    }
+
+    const [fixtureId, buildingName, zone, fixtureType, subtype, locationDetail,
+           floor, accessType, dimensions, notes, conditionRaw, sourceUrl] = cols.map(c => (c || '').trim());
+
+    if (!fixtureId || !buildingName || !fixtureType) {
+      errors.push(`Row ${i+2}: missing required fields`);
+      continue;
+    }
+
+    const typeKey = (fixtureType || '').toLowerCase();
+    const mappedType = TYPE_MAP[typeKey] ||
+      Object.entries(TYPE_MAP).find(([k]) => typeKey.includes(k))?.[1] ||
+      'door';
+
+    const conditionKey = (conditionRaw || '').toLowerCase();
+    const mappedStatus = STATUS_MAP[conditionKey] || 'working';
+
+    // Build feature name: subtype + zone
+    const nameBase = subtype || fixtureType;
+    const nameSuffix = zone ? ` — ${zone}` : (locationDetail ? ` — ${locationDetail}` : '');
+    const featureName = nameBase + nameSuffix;
+
+    // Detail: location + floor
+    const detailParts = [locationDetail, floor ? `Floor ${floor}` : '', dimensions].filter(Boolean);
+    const detail = detailParts.join('; ');
+
+    const notesText = [accessType, notes].filter(Boolean).join('. ');
+
+    const buildingSlug = toSlug(buildingName);
+    if (!buildingMap[buildingSlug]) {
+      buildingMap[buildingSlug] = { id: buildingSlug, name: buildingName, features: [] };
+    }
+
+    // Avoid duplicate IDs
+    if (!buildingMap[buildingSlug].features.find(f => f.id === fixtureId)) {
+      buildingMap[buildingSlug].features.push({
+        id: fixtureId,
+        type: mappedType,
+        name: featureName,
+        detail: detail || locationDetail || 'No detail available',
+        floor: floor || '—',
+        notes: notesText,
+        defaultStatus: mappedStatus,
+        sourceUrl: sourceUrl || '',
+      });
+    }
+  }
+
+  const buildings = Object.values(buildingMap);
+  const totalRows = buildings.reduce((n, b) => n + b.features.length, 0);
+  return { buildings, totalRows, errors };
+}
+
+function parseCSVLine(line) {
+  const cols = [];
+  let cur = '';
+  let inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuote && line[i+1] === '"') { cur += '"'; i++; }
+      else inQuote = !inQuote;
+    } else if (ch === ',' && !inQuote) {
+      cols.push(cur); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  cols.push(cur);
+  return cols;
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone')?.classList.add('dragover');
+}
+function handleDragLeave(e) {
+  document.getElementById('drop-zone')?.classList.remove('dragover');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone')?.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileInput(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let text = e.target.result;
+    // Fix common Windows-1252 / Mac encoding artefacts
+    text = text
+      .replace(/√©/g, 'é').replace(/√†/g, 'à').replace(/√ü/g, 'ü')
+      .replace(/‚Äî/g, '—').replace(/‚Äì/g, '–')
+      .replace(/‚Äù/g, '"').replace(/‚Äú/g, '"')
+      .replace(/‚Äô/g, "'").replace(/â€™/g, "'");
+    importPreview = parseDelimited(text);
+    renderApp();
+  };
+  reader.readAsText(file);
+}
+
+function commitImport() {
+  if (!importPreview) return;
+  const existing = loadImported();
+  const merged = [...existing];
+  for (const b of importPreview.buildings) {
+    const idx = merged.findIndex(x => x.id === b.id);
+    if (idx >= 0) {
+      const existIds = new Set(merged[idx].features.map(f => f.id));
+      for (const f of b.features) {
+        if (!existIds.has(f.id)) merged[idx].features.push(f);
+      }
+    } else {
+      merged.push(b);
+    }
+  }
+  saveImported(merged);
+  importPreview = null;
+  showToast(`✅ Imported ${merged.reduce((n,b)=>n+b.features.length,0)} features`);
+  renderApp();
+}
+
+function clearPreview() {
+  importPreview = null;
+  renderApp();
+}
+
+function clearImported() {
+  if (confirm('Clear all imported data? Seed data will remain.')) {
+    localStorage.removeItem(LS_IMPORTED);
+    renderApp();
+  }
+}
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'success-toast';
+  t.textContent = msg;
+  t.setAttribute('role', 'status');
+  t.setAttribute('aria-live', 'polite');
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+window.addEventListener('hashchange', () => {
+  importPreview = null;
+  qrLanding = { selectedAnswer: null, submitted: false };
+  renderApp();
+});
+
+renderApp();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+  integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSr7FurulmL7pH0LapudyW/URZrmBcTFbQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</body>
+</html>
