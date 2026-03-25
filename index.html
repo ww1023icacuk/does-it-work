@@ -6,7 +6,8 @@
 <meta name="theme-color" content="#0f0f0f">
 <title>Does It Work?</title>
 <style>
-:root {
+/* ── Dark (default) ── */
+:root,[data-theme="dark"] {
   --bg: #0f0f0f;
   --surface: #1c1c1e;
   --card: #242428;
@@ -25,7 +26,63 @@
   --accent: #0a84ff;
   --radius: 12px;
   --radius-sm: 8px;
+  --row-hover: #1e1e24;
+  --row-active: #18181e;
+  --btn-secondary-hover: #2a2a2e;
 }
+/* ── Light ── */
+[data-theme="light"] {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --card: #f2f2f7;
+  --border: #d1d1d6;
+  --text: #1c1c1e;
+  --text-2: #48484a;
+  --text-3: #8e8e93;
+  --working: #248a3d;
+  --working-bg: rgba(36,138,61,.1);
+  --partial: #e89e61;
+  --partial-bg: rgba(178,80,0,.1);
+  --broken: #d70015;
+  --broken-bg: rgba(215,0,21,.1);
+  --unavail: #8e8e93;
+  --unavail-bg: rgba(142,142,147,.1);
+  --accent: #0071e3;
+  --row-hover: #e8e8ed;
+  --row-active: #dcdce1;
+  --btn-secondary-hover: #e8e8ed;
+}
+/* ── High Contrast ── */
+[data-theme="contrast"] {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --card: #111111;
+  --border: #ffffff;
+  --text: #ffffff;
+  --text-2: #ffffff;
+  --text-3: #cccccc;
+  --working: #00e64d;
+  --working-bg: rgba(0,230,77,.2);
+  --partial: #ffe500;
+  --partial-bg: rgba(255,229,0,.2);
+  --broken: #ff2d00;
+  --broken-bg: rgba(255,45,0,.2);
+  --unavail: #cccccc;
+  --unavail-bg: rgba(204,204,204,.15);
+  --accent: #00b0ff;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --row-hover: #1a1a1a;
+  --row-active: #222222;
+  --btn-secondary-hover: #1a1a1a;
+}
+[data-theme="contrast"] .header{background:rgba(0,0,0,.98)}
+[data-theme="contrast"] .feature-row{border-width:2px}
+[data-theme="contrast"] .status-badge{font-size:12px}
+[data-theme="contrast"] .building-card{border-width:2px}
+[data-theme="contrast"] *:focus-visible{outline:3px solid #ffe500;outline-offset:2px}
+/* ── Light mode header blur ── */
+[data-theme="light"] .header{background:rgba(242,242,247,.92)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
@@ -76,8 +133,8 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 /* ── Feature row ── */
 .feature-row{display:flex;align-items:flex-start;gap:10px;padding:10px 10px;border-radius:var(--radius-sm);margin-bottom:4px;background:var(--card);border:1px solid var(--border);cursor:pointer;text-decoration:none;color:inherit;transition:border-color .15s,background .15s}
-.feature-row:hover{border-color:var(--accent);background:#1e1e24}
-.feature-row:active{background:#18181e}
+.feature-row:hover{border-color:var(--accent);background:var(--row-hover)}
+.feature-row:active{background:var(--row-active)}
 .feature-row:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .feature-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center;line-height:1}
 .feature-body{flex:1;min-width:0}
@@ -126,7 +183,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .btn-primary:hover{opacity:.9}
 .btn-primary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn-secondary{width:100%;padding:12px;background:var(--card);color:var(--text-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
-.btn-secondary:hover{background:var(--surface)}
+.btn-secondary:hover{background:var(--btn-secondary-hover)}
 
 /* ── QR feature page ── */
 .qr-page{padding:16px;max-width:480px;margin:0 auto}
@@ -187,8 +244,10 @@ tr:last-child td{border-bottom:none}
 .search-result-building{font-size:11px;color:var(--accent);margin-bottom:2px;font-weight:600}
 
 /* ── Campus dropdown ── */
-.campus-select{background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text-2);font-size:11px;font-weight:600;padding:2px 8px 2px 8px;cursor:pointer;outline:none;margin-left:auto;-webkit-appearance:none;appearance:none;max-width:140px}
+.campus-select{background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text-2);font-size:11px;font-weight:600;padding:2px 22px 2px 8px;cursor:pointer;outline:none;margin-left:auto;-webkit-appearance:none;appearance:none;max-width:140px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23aeaeb2' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
 .campus-select:focus{border-color:var(--accent);color:var(--text)}
+.theme-select{background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text-2);font-size:11px;font-weight:600;padding:2px 22px 2px 8px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23aeaeb2' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;flex-shrink:0}
+.theme-select:focus{border-color:var(--accent)}
 
 /* ── Comments section ── */
 .comments-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:0}
@@ -203,6 +262,13 @@ tr:last-child td{border-bottom:none}
 /* ── Admin ── */
 .admin-login-link{font-size:12px;color:var(--partial);font-weight:600;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
 .admin-badge-active{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,214,10,.15);color:var(--partial);cursor:pointer;margin-left:6px}
+.admin-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 16px 6px}
+.btn-admin-login{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-admin-login:hover{border-color:var(--accent);color:var(--accent)}
+.btn-admin-panel{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,214,10,.35);background:rgba(255,214,10,.08);color:var(--partial);font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-admin-panel:hover{background:rgba(255,214,10,.16)}
+.btn-logout{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,69,58,.3);background:rgba(255,69,58,.08);color:var(--broken);font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-logout:hover{background:rgba(255,69,58,.18)}
 .login-page-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;width:100%;max-width:360px}
 .login-title{font-size:22px;font-weight:800;margin-bottom:6px}
@@ -293,6 +359,7 @@ a{color:var(--accent)}
 </head>
 <body>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <div id="app"></div>
@@ -345,9 +412,13 @@ const CAMPUSES = [
   { id: 'silwood', label: 'Silwood Park (soon)', disabled: true },
 ];
 
-// Admin — change this password before deploying to production
-const ADMIN_PASSWORD = 'ICdoesitwork';
-const LS_ADMIN = 'ic-access-admin-v1';
+const LS_THEME  = 'ic-access-theme-v1';
+
+// Apply saved theme immediately (before first render)
+(function() {
+  const t = localStorage.getItem(LS_THEME) || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+})();
 
 const LS_REPORTS  = 'ic-access-reports-v2';
 const LS_OVERRIDE = 'ic-access-overrides-v2';
@@ -373,7 +444,7 @@ function hasEmbeddedFirebaseConfig() {
 
 function getLogo() {
   const src = db ? cachedLogoDataUrl : localStorage.getItem(LS_LOGO);
-  return src ? `<img src="${src}" alt="App logo">` : '♿';
+  return `<img src="${src || 'logo_does_it_work.png'}" alt="App logo">`;
 }
 function saveLogo(dataUrl) {
   if (db) {
@@ -689,6 +760,11 @@ function initFirebase() {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore();
 
+    firebase.auth().onAuthStateChanged(user => {
+      adminLoggedIn = !!user;
+      renderApp();
+    });
+
     db.collection('reports').onSnapshot(snap => {
       const next = {};
       snap.forEach(d => { next[d.id] = d.data().items || []; });
@@ -732,7 +808,8 @@ let importPreview = null;
 let qrLanding     = { selectedAnswer: null, submitted: false };
 let searchQuery   = '';
 let currentCampus = 'sk';
-let adminLoggedIn = sessionStorage.getItem(LS_ADMIN) === '1';
+let currentTheme  = localStorage.getItem(LS_THEME) || 'dark';
+let adminLoggedIn = false; // set by firebase.auth().onAuthStateChanged
 let loginError    = '';
 
 function loadReports()  {
@@ -1188,9 +1265,13 @@ function renderMain() {
       <div class="header-top">
         <div class="header-logo" aria-hidden="true">${getLogo()}</div>
         <h1 class="header-title">Does It Work?</h1>
-        ${adminLoggedIn ? `<button class="admin-badge-active" onclick="route('#/admin')" title="Admin panel">⚙️ Admin</button>` : ''}
         <select class="campus-select" onchange="setCampus(this.value)" aria-label="Select campus" title="Select campus">
           ${campusOptions}
+        </select>
+        <select class="theme-select" onchange="setTheme(this.value)" aria-label="Select theme" title="Change theme">
+          <option value="dark"     ${currentTheme==='dark'     ?'selected':''}>🌙 Dark</option>
+          <option value="light"    ${currentTheme==='light'    ?'selected':''}>☀️ Light</option>
+          <option value="contrast" ${currentTheme==='contrast' ?'selected':''}>⬛ Contrast</option>
         </select>
       </div>
       <nav class="nav-tabs" role="tablist" aria-label="View">
@@ -1208,6 +1289,13 @@ function renderMain() {
         aria-label="Search features">
       ${searchQuery ? `<button class="search-clear" onclick="setSearch('')" aria-label="Clear search">×</button>` : ''}
     </div>
+    <div class="admin-bar">
+      ${adminLoggedIn
+        ? `<button class="btn-admin-panel" onclick="route('#/admin')">⚙️ Admin Panel</button>
+           <button class="btn-logout" onclick="logoutAdmin()">🚪 Log Out</button>`
+        : `<button class="btn-admin-login" onclick="route('#/login')">🔑 Admin Login</button>`
+      }
+    </div>
     ${searchQuery.trim() ? '' : `<div class="filter-bar" role="toolbar" aria-label="Filter features">${filterBtns}</div>`}
     <div class="summary-bar" aria-live="polite" aria-label="Status summary">
       <span class="summary-pill pill-working">✅ ${summary.working} working</span>
@@ -1220,7 +1308,7 @@ function renderMain() {
       }
     </div>
     <main class="main" role="main">${mainContent}</main>
-    <button class="fab" onclick="route('#/admin')" aria-label="Admin settings" title="Admin settings">⚙️</button>
+    ${adminLoggedIn ? `<button class="fab" onclick="route('#/admin')" aria-label="Admin settings" title="Admin settings">⚙️</button>` : ''}
   `;
 }
 
@@ -1337,7 +1425,7 @@ function renderFeaturePage(featureId, source) {
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;margin-top:12px">
           ${sourceLink}
-          <a class="qr-source" href="#/qr/${esc(featureId)}">🔲 Generate / print QR code</a>
+          ${adminLoggedIn ? `<a class="qr-source" href="#/qr/${esc(featureId)}">🔲 Generate / print QR code</a>` : ''}
         </div>
       </div>
       ${reportForm}
@@ -1350,6 +1438,19 @@ function renderFeaturePage(featureId, source) {
 // RENDER — ADMIN / IMPORT PAGE
 // ─────────────────────────────────────────────
 function renderAdminPage() {
+  if (!adminLoggedIn) {
+    return `
+      <div class="login-page-wrap">
+        <div class="login-card">
+          <div style="font-size:32px;margin-bottom:12px;text-align:center">🔒</div>
+          <h1 class="login-title">Admin Only</h1>
+          <p class="login-sub">You need to be logged in as an administrator to access settings.</p>
+          <button class="btn-primary" onclick="route('#/login')">Log In</button>
+          <button class="btn-secondary" style="margin-top:8px" onclick="route('#/')">← Back to app</button>
+        </div>
+      </div>`;
+  }
+
   const imported = loadImported();
   const importedCount = imported.reduce((n, b) => n + b.features.length, 0);
   const schemaHtml = `
@@ -1406,8 +1507,8 @@ function renderAdminPage() {
         <button class="qr-back" onclick="route('#/')" aria-label="Back to main view" style="margin:0">← Back</button>
         <h1 class="header-title" style="margin-left:8px">Settings</h1>
         ${adminLoggedIn
-          ? `<button class="admin-badge-active" onclick="logoutAdmin()" title="Log out">⚙️ Admin ✕</button>`
-          : `<button class="admin-login-link" onclick="route('#/login')">Admin login</button>`}
+          ? `<button class="btn-logout" onclick="logoutAdmin()">🚪 Log Out</button>`
+          : `<button class="btn-admin-login" onclick="route('#/login')">🔑 Admin Login</button>`}
       </div>
     </header>
     <div class="admin-page">
@@ -1502,10 +1603,12 @@ function renderLoginPage() {
         <h1 class="login-title">Admin Login</h1>
         <p class="login-sub">Enter the administrator password to access management tools.</p>
         <form onsubmit="return loginAdmin(event)" novalidate>
+          <label class="login-label" for="admin-email">Email</label>
+          <input class="login-input" type="email" id="admin-email" autocomplete="username" placeholder="admin@example.com" autofocus style="margin-bottom:12px">
           <label class="login-label" for="admin-pwd">Password</label>
-          <input class="login-input" type="password" id="admin-pwd" autocomplete="current-password" placeholder="Enter password" autofocus>
+          <input class="login-input" type="password" id="admin-pwd" autocomplete="current-password" placeholder="Password">
           <div class="login-err">${esc(loginError)}</div>
-          <button type="submit" class="btn-primary">Log In</button>
+          <button type="submit" class="btn-primary">${db ? 'Log In' : 'Not connected to Firebase'}</button>
         </form>
         <button class="btn-secondary" style="margin-top:8px" onclick="route('#/')">← Back to app</button>
       </div>
@@ -1724,6 +1827,19 @@ function renderApp() {
   const r = getRoute();
   const app = document.getElementById('app');
   if (r.page === 'qrcode') {
+    if (!adminLoggedIn) {
+      app.innerHTML = `
+        <div class="login-page-wrap">
+          <div class="login-card">
+            <div style="font-size:32px;margin-bottom:12px;text-align:center">🔒</div>
+            <h1 class="login-title">Admin Only</h1>
+            <p class="login-sub">QR code generation is restricted to administrators.</p>
+            <button class="btn-primary" onclick="route('#/login')">Log In</button>
+            <button class="btn-secondary" style="margin-top:8px" onclick="history.back()">← Go Back</button>
+          </div>
+        </div>`;
+      return;
+    }
     app.innerHTML = renderQRCodePage(r.featureId);
     // Initialise QR code after DOM is ready
     const tryQR = (attempts) => {
@@ -1864,25 +1980,32 @@ function resetQRLanding() {
 // ─────────────────────────────────────────────
 function loginAdmin(e) {
   e.preventDefault();
-  const pwd = document.getElementById('admin-pwd')?.value || '';
-  if (pwd === ADMIN_PASSWORD) {
-    sessionStorage.setItem(LS_ADMIN, '1');
-    adminLoggedIn = true;
-    loginError = '';
-    route('#/admin');
-  } else {
-    loginError = 'Incorrect password. Try again.';
+  if (!db) {
+    loginError = 'Firebase not connected. Check your connection and try again.';
     renderApp();
-    setTimeout(() => document.getElementById('admin-pwd')?.focus(), 50);
+    return false;
   }
+  const email = (document.getElementById('admin-email')?.value || '').trim();
+  const pwd   =  document.getElementById('admin-pwd')?.value   || '';
+  loginError = '';
+  firebase.auth().signInWithEmailAndPassword(email, pwd)
+    .then(() => { loginError = ''; route('#/admin'); })
+    .catch(() => {
+      loginError = 'Incorrect email or password.';
+      renderApp();
+      setTimeout(() => document.getElementById('admin-pwd')?.focus(), 50);
+    });
   return false;
 }
 
 function logoutAdmin() {
-  sessionStorage.removeItem(LS_ADMIN);
-  adminLoggedIn = false;
-  renderApp();
-  showToast('Logged out');
+  firebase.auth().signOut().then(() => {
+    showToast('Logged out');
+  }).catch(() => {
+    adminLoggedIn = false;
+    renderApp();
+    showToast('Logged out');
+  });
 }
 
 function resetFeatureReports(featureId) {
@@ -1917,17 +2040,29 @@ function resetAllReports() {
 }
 
 function setSearch(q) {
+  const prev = document.querySelector('.search-input');
+  const selStart = prev ? prev.selectionStart : null;
+  const selEnd   = prev ? prev.selectionEnd   : null;
   searchQuery = q;
   renderApp();
-  // Restore focus to the search input after re-render
-  setTimeout(() => {
-    const el = document.querySelector('.search-input');
-    if (el && document.activeElement !== el) el.focus();
-  }, 0);
+  const el = document.querySelector('.search-input');
+  if (el) {
+    el.focus();
+    if (selStart !== null) {
+      try { el.setSelectionRange(selStart, selEnd); } catch(e) {}
+    }
+  }
 }
 
 function setCampus(id) {
   currentCampus = id;
+  renderApp();
+}
+
+function setTheme(t) {
+  currentTheme = t;
+  localStorage.setItem(LS_THEME, t);
+  document.documentElement.setAttribute('data-theme', t);
   renderApp();
 }
 

@@ -3,22 +3,13 @@
     "public": ".",
     "ignore": [
       "firebase.json",
-      ".firebaserc",
-      ".gitignore",
-      ".git/**"
+      "**/.*",
+      "**/node_modules/**"
     ],
     "rewrites": [
       {
         "source": "**",
-        "destination": "/Does_It_Work.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "**",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-        ]
+        "destination": "/index.html"
       }
     ]
   }

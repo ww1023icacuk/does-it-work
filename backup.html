@@ -262,6 +262,13 @@ tr:last-child td{border-bottom:none}
 /* ── Admin ── */
 .admin-login-link{font-size:12px;color:var(--partial);font-weight:600;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
 .admin-badge-active{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,214,10,.15);color:var(--partial);cursor:pointer;margin-left:6px}
+.admin-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:4px 16px 6px}
+.btn-admin-login{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-admin-login:hover{border-color:var(--accent);color:var(--accent)}
+.btn-admin-panel{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,214,10,.35);background:rgba(255,214,10,.08);color:var(--partial);font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-admin-panel:hover{background:rgba(255,214,10,.16)}
+.btn-logout{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,69,58,.3);background:rgba(255,69,58,.08);color:var(--broken);font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-logout:hover{background:rgba(255,69,58,.18)}
 .login-page-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;width:100%;max-width:360px}
 .login-title{font-size:22px;font-weight:800;margin-bottom:6px}
@@ -1258,7 +1265,6 @@ function renderMain() {
       <div class="header-top">
         <div class="header-logo" aria-hidden="true">${getLogo()}</div>
         <h1 class="header-title">Does It Work?</h1>
-        ${adminLoggedIn ? `<button class="admin-badge-active" onclick="route('#/admin')" title="Admin panel">⚙️ Admin</button>` : ''}
         <select class="campus-select" onchange="setCampus(this.value)" aria-label="Select campus" title="Select campus">
           ${campusOptions}
         </select>
@@ -1282,6 +1288,13 @@ function renderMain() {
         oninput="setSearch(this.value)"
         aria-label="Search features">
       ${searchQuery ? `<button class="search-clear" onclick="setSearch('')" aria-label="Clear search">×</button>` : ''}
+    </div>
+    <div class="admin-bar">
+      ${adminLoggedIn
+        ? `<button class="btn-admin-panel" onclick="route('#/admin')">⚙️ Admin Panel</button>
+           <button class="btn-logout" onclick="logoutAdmin()">🚪 Log Out</button>`
+        : `<button class="btn-admin-login" onclick="route('#/login')">🔑 Admin Login</button>`
+      }
     </div>
     ${searchQuery.trim() ? '' : `<div class="filter-bar" role="toolbar" aria-label="Filter features">${filterBtns}</div>`}
     <div class="summary-bar" aria-live="polite" aria-label="Status summary">
@@ -1412,7 +1425,7 @@ function renderFeaturePage(featureId, source) {
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;margin-top:12px">
           ${sourceLink}
-          <a class="qr-source" href="#/qr/${esc(featureId)}">🔲 Generate / print QR code</a>
+          ${adminLoggedIn ? `<a class="qr-source" href="#/qr/${esc(featureId)}">🔲 Generate / print QR code</a>` : ''}
         </div>
       </div>
       ${reportForm}
@@ -1494,8 +1507,8 @@ function renderAdminPage() {
         <button class="qr-back" onclick="route('#/')" aria-label="Back to main view" style="margin:0">← Back</button>
         <h1 class="header-title" style="margin-left:8px">Settings</h1>
         ${adminLoggedIn
-          ? `<button class="admin-badge-active" onclick="logoutAdmin()" title="Log out">⚙️ Admin ✕</button>`
-          : `<button class="admin-login-link" onclick="route('#/login')">Admin login</button>`}
+          ? `<button class="btn-logout" onclick="logoutAdmin()">🚪 Log Out</button>`
+          : `<button class="btn-admin-login" onclick="route('#/login')">🔑 Admin Login</button>`}
       </div>
     </header>
     <div class="admin-page">
@@ -1814,6 +1827,19 @@ function renderApp() {
   const r = getRoute();
   const app = document.getElementById('app');
   if (r.page === 'qrcode') {
+    if (!adminLoggedIn) {
+      app.innerHTML = `
+        <div class="login-page-wrap">
+          <div class="login-card">
+            <div style="font-size:32px;margin-bottom:12px;text-align:center">🔒</div>
+            <h1 class="login-title">Admin Only</h1>
+            <p class="login-sub">QR code generation is restricted to administrators.</p>
+            <button class="btn-primary" onclick="route('#/login')">Log In</button>
+            <button class="btn-secondary" style="margin-top:8px" onclick="history.back()">← Go Back</button>
+          </div>
+        </div>`;
+      return;
+    }
     app.innerHTML = renderQRCodePage(r.featureId);
     // Initialise QR code after DOM is ready
     const tryQR = (attempts) => {
